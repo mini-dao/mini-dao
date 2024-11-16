@@ -1,6 +1,8 @@
 import { Scenes, session, Telegraf } from "telegraf";
+import { parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { config } from "../config";
+import { sell } from "../lib/dex";
 import { buy } from "../lib/dex/buy";
 import { getChain } from "../lib/get-chain";
 import { getGroup } from "../lib/get-group";
@@ -14,7 +16,9 @@ import { holdings } from "./commands/holdings";
 import { switchChain } from "./commands/switchChain";
 import { myChatMember } from "./events/my-chat-member";
 import { getGroupWallet } from "./helpers";
-import buyWizard, { pendingTransactions } from "./scenes/buyWizard2";
+import buyWizard from "./scenes/buyWizard2";
+import sellWizard from "./scenes/sellWizard";
+import { pendingTransactions } from "./types/pending-transactions";
 
 const chains = [
   { id: "ethereum", name: "Ethereum" },
@@ -49,7 +53,7 @@ switchId(bot);
 
 // Initialize session and stage
 
-const stage = new Scenes.Stage<Scenes.WizardContext>([buyWizard]);
+const stage = new Scenes.Stage<Scenes.WizardContext>([buyWizard, sellWizard]);
 bot.use(session());
 bot.use(stage.middleware());
 
@@ -155,6 +159,9 @@ bot.command("block", async (ctx) => {
 bot.command("buy", (ctx: Scenes.WizardContext) =>
   ctx.scene.enter("buy-wizard")
 );
+bot.command("sell", (ctx: Scenes.WizardContext) =>
+  ctx.scene.enter("sell-wizard")
+);
 
 bot.on("poll", async (ctx) => {
   const poll = ctx.poll;
@@ -171,6 +178,10 @@ bot.on("poll", async (ctx) => {
   );
 
   if (txDetails) {
+    const group = await getGroup(txDetails.chatId.toString());
+
+    const chain = getChain(group.chainId);
+
     if (totalVotes >= 1) {
       if (yesVotes >= 1) {
         // Majority approved - execute transaction
@@ -180,14 +191,29 @@ bot.on("poll", async (ctx) => {
           amount: txDetails.amount,
         });
         const { wallet } = await getGroupWallet(txDetails.chatId);
-        console.log("🚀 ~ bot.on ~ wallet:", wallet);
-        await ctx.telegram.sendMessage(txDetails.chatId, "Buying...");
-        await buy({
-          account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
-          chain: currentChain,
-          token: txDetails.tokenAddress as `0x${string}`,
-          amount: txDetails.amount,
-        });
+        console.log(
+          "🚀 ~ bot.on ~ wallet:",
+          wallet,
+          parseUnits(parseInt(txDetails.amount).toString(), 6).toString()
+        );
+        if (txDetails.type === "buy") {
+          await ctx.telegram.sendMessage(txDetails.chatId, "Buying...");
+          await buy({
+            account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
+            chain,
+            token: txDetails.tokenAddress as `0x${string}`,
+            amount: txDetails.amount.toString(),
+          });
+        } else if (txDetails.type === "sell") {
+          await ctx.telegram.sendMessage(txDetails.chatId, "Selling...");
+
+          await sell({
+            account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
+            chain,
+            token: txDetails.tokenAddress as `0x${string}`,
+            amount: txDetails.amount.toString(),
+          });
+        }
         await ctx.telegram.sendMessage(
           txDetails.chatId,
           "✅ Transaction approved and executed!"
