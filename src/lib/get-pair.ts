@@ -5,8 +5,9 @@ export const getPair = (chain: Chain, token: Address) => {
   switch (chain.name) {
     case mantle.name: {
       switch (token) {
-        case "0x968B3aF609C392ff02a97CCb868AE334F10D4C77":
-          return "0x89B10fe88a4bb6D4727cfE18ad6356A89BD2FE23";
+        // pepe
+        case "0xAEAFBA08a4B79f08FAeccAE67804cF93FCD08AC1":
+          return "0xE36e1E9796C7408C7a9a3BD35e6f32f42a3ca56d";
       }
 
       break;
