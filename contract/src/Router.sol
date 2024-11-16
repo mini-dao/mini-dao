@@ -8,6 +8,7 @@ import {DataTypes} from "src/libraries/DataTypes.sol";
 import {Events} from "src/libraries/Events.sol";
 
 contract Router {
+
     WETH public immutable weth;
 
     constructor (address w) {
@@ -35,10 +36,10 @@ contract Router {
         emit Events.Swap(msg.sender, swapData);
     }
 
-    function sell(address _pair, address _tokenIn, uint256 _amountIn) external returns (uint256 amountOut, DataTypes.SwapData memory swapData) {
-        IERC20(_tokenIn).transferFrom(msg.sender, address(this), _amountIn);
-        IERC20(_tokenIn).approve(_pair, _amountIn);
-        (amountOut, swapData) = IPair(_pair).swap(_tokenIn, _amountIn);
+    function sell(address _pair, uint256 _amountIn) external returns (uint256 amountOut, DataTypes.SwapData memory swapData) {
+        IPair(_pair).token1().transferFrom(msg.sender, address(this), _amountIn);
+        IPair(_pair).token1().approve(_pair, _amountIn);
+        (amountOut, swapData) = IPair(_pair).swap(address(IPair(_pair).token1()), _amountIn);
         weth.withdraw(amountOut);
         payable(msg.sender).transfer(amountOut);
         emit Events.Swap(msg.sender, swapData);
