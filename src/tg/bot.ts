@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Markup, Scenes, session, Telegraf } from "telegraf";
 import { createPublicClient, formatEther, http } from "viem";
 import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
@@ -65,6 +65,95 @@ bot.on("my_chat_member", async (ctx) => {
 
       console.log("left", { group });
     }
+  }
+});
+
+bot.command("deposit", async (ctx) => {
+  try {
+    const [group] = await db
+      .select()
+      .from(schema.groups)
+      .where(eq(schema.groups.telegramId, ctx.chat.id.toString()));
+
+    if (!group) {
+      throw new Error("group not found.");
+    }
+
+    const { groupUser, wallet } = await (async () => {
+      const [join] = await db
+        .select()
+        .from(schema.groupUsers)
+        .innerJoin(
+          schema.groups,
+          eq(schema.groups.id, schema.groupUsers.groupId)
+        )
+        .innerJoin(
+          schema.wallets,
+          eq(schema.wallets.id, schema.groupUsers.walletId)
+        )
+        .where(
+          and(
+            eq(schema.groups.telegramId, ctx.chat.id.toString()),
+            eq(schema.groupUsers.telegramId, ctx.from.id.toString())
+          )
+        );
+
+      if (!join) {
+        return await db.transaction(async (tx) => {
+          const privateKey = generatePrivateKey();
+
+          const [wallet] = await tx
+            .insert(schema.wallets)
+            .values({
+              address: privateKeyToAddress(privateKey),
+              privateKey,
+            })
+            .returning();
+
+          const [groupUser] = await tx
+            .insert(schema.groupUsers)
+            .values({
+              groupId: group.id,
+              telegramId: ctx.from.id.toString(),
+              walletId: wallet.id,
+            })
+            .returning();
+
+          return { groupUser, wallet };
+        });
+      }
+
+      return {
+        groupUser: join.group_users,
+        wallet: join.wallets,
+      };
+    })();
+
+    // Send response with wallet address
+
+    await ctx.reply(
+      `🏦 Your deposit address:\n\n +
+          \`${wallet.address}\`\n\n +
+          ✅ Send tokens to this address to deposit them into your account.\n +
+          ⚠️ Only send tokens on supported networks!`,
+      {
+        parse_mode: "Markdown",
+        ...Markup.inlineKeyboard([
+          [
+            Markup.button.url(
+              "View on Etherscan",
+              `https://sepolia.etherscan.io/address/${wallet.address}`
+            ),
+          ],
+        ]),
+      }
+    );
+  } catch (error) {
+    console.error("Error in deposit command:", error);
+
+    await ctx.reply(
+      "❌ Sorry, there was an error processing your request. Please try again later."
+    );
   }
 });
 
