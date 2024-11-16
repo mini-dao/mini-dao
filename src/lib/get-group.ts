@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
 import { db, schema } from "../db";
 
-export const getGroup = async (id: string) => {
+export const getGroup = async (telegramId: string) => {
   const group = await db.query.groups.findFirst({
-    where: eq(schema.groups.telegramId, id),
+    where: eq(schema.groups.telegramId, telegramId),
     with: {
       wallet: {
         with: {
