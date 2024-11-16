@@ -94,9 +94,11 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
   },
   // Step 4: Handle amount selection and complete
   async (ctx) => {
-    if ("data" in ctx.callbackQuery!) {
+    if (ctx.callbackQuery && "data" in ctx.callbackQuery) {
       if (ctx.callbackQuery.data === "Custom") {
-        await ctx.reply("Please enter your desired amount:");
+        await ctx.reply("Please enter your desired amount:", {
+          reply_markup: { force_reply: true },
+        });
         return;
       }
       // Handle predefined amount
