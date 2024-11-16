@@ -33,4 +33,4 @@ Mini DAO is a telegram bot that enables DAO's inside of Telegram. Add the bot to
 - [arjanjohan](https://x.com/arjanjohan)
 - [0xjsi.eth](https://x.com/0xjsieth)
 - [nhestrompia.eth](https://x.com/nhestrompia)
-- [](https://x.com/)
+- [0xGGE](https://x.com/0xGGE)
