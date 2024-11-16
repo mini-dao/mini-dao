@@ -1,5 +1,12 @@
 import { relations } from "drizzle-orm";
-import { numeric, pgTable, text, unique, uuid } from "drizzle-orm/pg-core";
+import {
+  integer,
+  numeric,
+  pgTable,
+  text,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { createdAt } from "../columns/createdAt";
 import { id } from "../columns/id";
 import { updatedAt } from "../columns/updatedAt";
@@ -12,12 +19,19 @@ export const walletHoldings = pgTable(
     walletId: uuid("wallet_id")
       .notNull()
       .references(() => wallets.id),
+    chainId: integer("chain_id").notNull(),
     address: text("address").notNull(),
     amount: numeric("amount").notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (groupUsers) => [unique().on(groupUsers.walletId, groupUsers.address)]
+  (walletHoldings) => [
+    unique().on(
+      walletHoldings.walletId,
+      walletHoldings.chainId,
+      walletHoldings.address
+    ),
+  ]
 );
 
 export const walletHoldingRelations = relations(walletHoldings, ({ one }) => ({

@@ -17,7 +17,7 @@ export const readContract = async (
     data: { result },
   } = await createContractsApi(chain)
     .callContractFunction("ethereum", label, contract, fn, {})
-    .catch((error) => Promise.reject(error));
+    .catch((error) => Promise.reject(new Error("error reading contract.")));
 
   if (result.kind !== "MethodCallResponse") {
     throw new Error("not a view transaction.");

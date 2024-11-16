@@ -32,7 +32,7 @@ export const writeContract = async (
       value,
       args,
     })
-    .catch((error) => Promise.reject(error));
+    .catch((error) => Promise.reject(new Error("error writing contract.")));
 
   if (result.kind !== "TransactionToSignResponse") {
     throw new Error("not a transaction to sign.");

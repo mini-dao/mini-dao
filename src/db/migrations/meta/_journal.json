@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1731766075126,
+      "tag": "0000_abandoned_living_lightning",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1731766317483,
+      "tag": "0001_futuristic_exodus",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1731766364600,
+      "tag": "0002_blushing_may_parker",
+      "breakpoints": true
+    }
+  ]
+}
