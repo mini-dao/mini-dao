@@ -5,12 +5,12 @@ import { config } from "../config";
 import buyWizard from "./scenes/buyWizard";
 
 // Initialize Telegram bot
-const bot = new Telegraf<Scenes.WizardContext>(config.telegramToken);
+export const bot = new Telegraf<Scenes.WizardContext>(config.telegramToken);
 
 // Initialize Viem client
 const client = createPublicClient({
   chain: mainnet,
-  transport: http(process.env.RPC_URL),
+  transport: http(),
 });
 
 // Initialize session and stage
@@ -93,19 +93,3 @@ bot.command("buy", (ctx: Scenes.WizardContext) =>
 bot.catch((err: any) => {
   console.error("Bot error:", err);
 });
-
-// Start the bot
-bot
-  .launch()
-  .then(() => {
-    console.log("Bot is running!");
-  })
-  .catch((err) => {
-    console.error("Failed to start bot:", err);
-  });
-
-// Enable graceful stop
-process.once("SIGINT", () => bot.stop("SIGINT"));
-process.once("SIGTERM", () => bot.stop("SIGTERM"));
-
-export default bot;
