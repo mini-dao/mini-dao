@@ -1,10 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Markup, Scenes, session, Telegraf } from "telegraf";
 import { createPublicClient, formatEther, http } from "viem";
 import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
 import { mainnet } from "viem/chains";
 import { config } from "../config";
 import { db, schema } from "../db";
+import { getUserWallet } from "./helpers";
 import buyWizard from "./scenes/buyWizard2";
 
 const keyboard = Markup.keyboard([
@@ -70,70 +71,18 @@ bot.on("my_chat_member", async (ctx) => {
 
 bot.command("deposit", async (ctx) => {
   try {
-    const [group] = await db
-      .select()
-      .from(schema.groups)
-      .where(eq(schema.groups.telegramId, ctx.chat.id.toString()));
+    const { wallet } = await getUserWallet(ctx);
 
-    if (!group) {
-      throw new Error("group not found.");
-    }
-
-    const { groupUser, wallet } = await (async () => {
-      const [join] = await db
-        .select()
-        .from(schema.groupUsers)
-        .innerJoin(
-          schema.groups,
-          eq(schema.groups.id, schema.groupUsers.groupId)
-        )
-        .innerJoin(
-          schema.wallets,
-          eq(schema.wallets.id, schema.groupUsers.walletId)
-        )
-        .where(
-          and(
-            eq(schema.groups.telegramId, ctx.chat.id.toString()),
-            eq(schema.groupUsers.telegramId, ctx.from.id.toString())
-          )
-        );
-
-      if (!join) {
-        return await db.transaction(async (tx) => {
-          const privateKey = generatePrivateKey();
-
-          const [wallet] = await tx
-            .insert(schema.wallets)
-            .values({
-              address: privateKeyToAddress(privateKey),
-              privateKey,
-            })
-            .returning();
-
-          const [groupUser] = await tx
-            .insert(schema.groupUsers)
-            .values({
-              groupId: group.id,
-              telegramId: ctx.from.id.toString(),
-              walletId: wallet.id,
-            })
-            .returning();
-
-          return { groupUser, wallet };
-        });
-      }
-
-      return {
-        groupUser: join.group_users,
-        wallet: join.wallets,
-      };
-    })();
-
-    // Send response with wallet address
+    const balance = await client.getBalance({
+      address: wallet.address as `0x${string}`,
+    });
+    const formattedBalance = formatEther(balance);
+    const chainSymbol = mainnet.nativeCurrency.symbol;
 
     await ctx.reply(
-      `🏦 Your deposit address:\n\n` +
+      `🏦 Your deposit address on Sepolia:\n\n` +
         `\`${wallet.address}\`\n\n` +
+        `💰 Balance: ${formattedBalance} ${chainSymbol}\n\n` +
         `✅ Send tokens to this address to deposit them into your account.\n` +
         `⚠️ Only send tokens on supported networks!`,
       {
@@ -144,6 +93,8 @@ bot.command("deposit", async (ctx) => {
               "View on Etherscan",
               `https://sepolia.etherscan.io/address/${wallet.address}`
             ),
+            Markup.button.callback("Refresh", `refresh`),
+            Markup.button.callback("✅ Done", "deposit_done"),
           ],
         ]),
       }
@@ -177,10 +128,13 @@ bot.start(async (ctx) => await ctx.reply("Welcome"));
 // Start command
 bot.command("start", async (ctx) => {
   await ctx.reply(
-    "Welcome to Web3 Bot! 🤖\n\n" +
-      "Available commands:\n" +
+    "Welcome to MiniDAO Bot! 🤖\n\n" +
       "/balance <address> - Check ETH balance\n" +
+      "/deposit - Get deposit address\n" +
       "/block - Get latest block number\n" +
+      "/buy - Buy a token\n" +
+      "/sell - Sell a token\n" +
+      "/leaderboard - Display leaderboard\n" +
       "/gas - Get current gas price\n" +
       "/help - Show this help message"
   );
@@ -191,6 +145,7 @@ bot.command("help", async (ctx) => {
   await ctx.reply(
     "Available commands:\n" +
       "/balance <address> - Check ETH balance\n" +
+      "/deposit - Get deposit address\n" +
       "/block - Get latest block number\n" +
       "/buy - Buy a token\n" +
       "/sell - Sell a token\n" +
@@ -266,5 +221,49 @@ bot.catch((err: any) => {
 // Enable graceful stop
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
+
+// Add action handler for refresh button
+bot.action("refresh", async (ctx) => {
+  try {
+    const telegramId = ctx.from.id.toString();
+    const { wallet } = await getUserWallet(ctx);
+
+    // Get balance from current chain
+    const balance = await client.getBalance({
+      address: wallet.address as `0x${string}`,
+    });
+
+    const formattedBalance = formatEther(balance);
+    const chainSymbol = mainnet.nativeCurrency.symbol;
+
+    // Update the message with fresh data
+    await ctx.editMessageText(
+      `🏦 Your deposit address on Sepolia:\n\n` +
+        `\`${wallet.address}\`\n\n` +
+        `💰 Balance: ${formattedBalance} ${chainSymbol}\n\n` +
+        `✅ Send tokens to this address to deposit them into your account.\n` +
+        `⚠️ Only send tokens on supported networks!`,
+      {
+        parse_mode: "Markdown",
+        reply_markup: Markup.inlineKeyboard([
+          [
+            Markup.button.url(
+              "View on Etherscan",
+              `https://sepolia.etherscan.io/address/${wallet.address}`
+            ),
+            Markup.button.callback("Refresh", "refresh"),
+            Markup.button.callback("✅ Done", "deposit_done"),
+          ],
+        ]).reply_markup,
+      }
+    );
+
+    // Answer the callback query to remove loading state
+    await ctx.answerCbQuery("Balance updated!");
+  } catch (error) {
+    console.error("Error in refresh action:", error);
+    await ctx.answerCbQuery("❌ Failed to refresh balance");
+  }
+});
 
 export default bot;
