@@ -8,6 +8,15 @@ interface MyWizardSession extends Scenes.WizardSessionData {
   tokenAddress?: string;
   amount?: string;
 }
+export interface PendingTransaction {
+  chain: string;
+  tokenAddress: string;
+  amount: string;
+  chatId: number;
+  messageId: number;
+}
+
+export const pendingTransactions = new Map<string, PendingTransaction>();
 
 type MyContext = Scenes.WizardContext<MyWizardSession>;
 
@@ -117,14 +126,40 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
 
 async function handleBuyOrder(ctx: MyContext, amount: string) {
   const { selectedChain, tokenAddress } = ctx.scene.session;
-  await ctx.reply(
-    "Remaining Balance:\n" +
-      `Order Summary:\n` +
-      `Chain: ${selectedChain}\n` +
-      `Token: ${tokenAddress}\n` +
-      `Amount: ${amount}\n\n` +
-      `Order placed successfully!`
+  //   await ctx.reply(
+  //     "Remaining Balance:\n" +
+  //       `Order Summary:\n` +
+  //       `Chain: ${selectedChain}\n` +
+  //       `Token: ${tokenAddress}\n` +
+  //       `Amount: ${amount}\n\n` +
+  //       `Order placed successfully!`
+  //   );
+
+  const orderSummary =
+    `*📊 Order Summary*\n` +
+    `━━━━━━━━━━━━━━━\n` +
+    `🔗 *Chain:* ${selectedChain}\n` +
+    `🪙 *Token:* \`${tokenAddress}\`\n` +
+    `💰 *Amount:* ${amount} ETH\n` +
+    "Remaining:* Balance:\n" +
+    `━━━━━━━━━━━━━━━\n`;
+
+  const poll = await ctx.replyWithPoll(
+    `${orderSummary}\n*⚠️ Do you approve this transaction?*`,
+    ["✅ Yes", "❌ No"],
+    {
+      is_anonymous: false,
+      allows_multiple_answers: false,
+    }
   );
+
+  pendingTransactions.set(poll.poll.id, {
+    chain: selectedChain!,
+    tokenAddress: tokenAddress!,
+    amount,
+    chatId: poll.chat.id,
+    messageId: poll.message_id,
+  });
 }
 
 export type { MyContext, MyWizardSession };

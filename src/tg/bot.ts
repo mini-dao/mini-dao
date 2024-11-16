@@ -16,7 +16,7 @@ import { config } from "../config";
 import { db, schema } from "../db";
 import { getPublicClient } from "../lib/get-public-client";
 import { getGroupWallet, getUserWallet } from "./helpers";
-import buyWizard from "./scenes/buyWizard2";
+import buyWizard, { pendingTransactions } from "./scenes/buyWizard2";
 
 const keyboard = Markup.keyboard([
   Markup.button.pollRequest("Create poll", "regular"),
@@ -157,8 +157,7 @@ bot.action("deposit_done", async (ctx) => {
   await ctx.reply("✅ Deposit done!");
 });
 
-bot.on("poll", (ctx) => console.log("Poll update", ctx.poll));
-bot.on("poll_answer", (ctx) => console.log("Poll answer", ctx.pollAnswer));
+// bot.on("poll", (ctx) => console.log("Poll update", ctx.poll));
 
 // Initialize session and stage
 
@@ -246,25 +245,6 @@ bot.command("buy", (ctx: Scenes.WizardContext) =>
   ctx.scene.enter("buy-wizard")
 );
 
-// Error handling
-bot.catch((err: any) => {
-  console.error("Bot error:", err);
-});
-
-// Start the bot
-// bot
-//   .launch()
-//   .then(() => {
-//     console.log("Bot is running!");
-//   })
-//   .catch((err) => {
-//     console.error("Failed to start bot:", err);
-//   });
-
-// Enable graceful stop
-process.once("SIGINT", () => bot.stop("SIGINT"));
-process.once("SIGTERM", () => bot.stop("SIGTERM"));
-
 // Add action handler for refresh button
 bot.action("refresh", async (ctx) => {
   try {
@@ -308,5 +288,90 @@ bot.action("refresh", async (ctx) => {
     await ctx.answerCbQuery("❌ Failed to refresh balance");
   }
 });
+
+bot.on("poll", async (ctx) => {
+  const poll = ctx.poll;
+  const txDetails = pendingTransactions.get(poll.id);
+
+  const yesVotes = poll.options[0].voter_count;
+  const totalVotes = poll.total_voter_count;
+  console.log("🚀 ~ bot.on ~ yesVotes:", yesVotes, totalVotes, txDetails);
+
+  if (txDetails) {
+    if (totalVotes >= 2) {
+      if (yesVotes >= 2) {
+        // Majority approved - execute transaction
+        console.log("Executing transaction:", {
+          chain: txDetails.chain,
+          tokenAddress: txDetails.tokenAddress,
+          amount: txDetails.amount,
+        });
+
+        await ctx.telegram.sendMessage(
+          txDetails.chatId,
+          "✅ Transaction approved and executed!"
+        );
+        pendingTransactions.delete(poll.id);
+      } else {
+        await ctx.telegram.sendMessage(
+          txDetails.chatId,
+          "❌ Transaction rejected by voters."
+        );
+        pendingTransactions.delete(poll.id);
+      }
+    }
+  }
+});
+
+bot.on("poll_answer", async (ctx) => {
+  const poll = ctx.poll;
+  // console.log("🚀 ~ bot.on ~ ctx:", poll, ctx.pollAnswer,ctx.);
+  // const txDetails = pendingTransactions.get(poll?.id);
+  // if (txDetails) {
+  //   const yesVotes = poll!.options[0].voter_count;
+  //   const totalVotes = poll!.total_voter_count;
+
+  //   if (yesVotes >= 2) {
+  //     // Majority approved - execute transaction
+  //     console.log("Executing transaction:", {
+  //       chain: txDetails.chain,
+  //       tokenAddress: txDetails.tokenAddress,
+  //       amount: txDetails.amount,
+  //     });
+
+  //     await ctx.telegram.sendMessage(
+  //       txDetails.chatId,
+  //       "✅ Transaction approved and executed!"
+  //     );
+  //   }
+  //   // else {
+  //   //   await ctx.telegram.sendMessage(
+  //   //     txDetails.chatId,
+  //   //     "❌ Transaction rejected by voters."
+  //   //   );
+  //   // }
+
+  //   pendingTransactions.delete(poll.id);
+  // }
+});
+
+// Error handling
+bot.catch((err: any) => {
+  console.error("Bot error:", err);
+});
+
+// Start the bot
+// bot
+//   .launch()
+//   .then(() => {
+//     console.log("Bot is running!");
+//   })
+//   .catch((err) => {
+//     console.error("Failed to start bot:", err);
+//   });
+
+// Enable graceful stop
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));
 
 export default bot;
