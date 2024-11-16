@@ -202,7 +202,7 @@ bot.on("poll", async (ctx) => {
             account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
             chain,
             token: txDetails.tokenAddress as `0x${string}`,
-            amount: txDetails.amount.toString(),
+            amount: parseUnits(txDetails.amount.toString(), 18).toString(),
           });
         } else if (txDetails.type === "sell") {
           await ctx.telegram.sendMessage(txDetails.chatId, "Selling...");
@@ -211,7 +211,7 @@ bot.on("poll", async (ctx) => {
             account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
             chain,
             token: txDetails.tokenAddress as `0x${string}`,
-            amount: txDetails.amount.toString(),
+            amount: parseUnits(txDetails.amount.toString(), 6).toString(),
           });
         }
         await ctx.telegram.sendMessage(

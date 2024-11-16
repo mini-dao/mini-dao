@@ -1,4 +1,5 @@
 import type { Scenes, Telegraf } from "telegraf";
+import { formatUnits } from "viem";
 import { getChain } from "../../lib/get-chain";
 import { getGroup } from "../../lib/get-group";
 import { NATIVE_TOKEN_ADDRESS } from "../../lib/native-token-address";
@@ -18,9 +19,10 @@ export const holdings = (bot: Telegraf<Scenes.WizardContext>) =>
     await ctx.reply(
       [
         `🔗 ${group.chainId}`,
-        `🏦 Native balance: ${nativeHolding?.amount ?? "0"} ${
-          chain.nativeCurrency.symbol
-        }`,
+        `🏦 Native balance: ${formatUnits(
+          BigInt(nativeHolding?.amount ?? "0"),
+          18
+        )} ${chain.nativeCurrency.symbol}`,
         [
           `🏦 Other balances:`,
           group.wallet.holdings
@@ -29,7 +31,10 @@ export const holdings = (bot: Telegraf<Scenes.WizardContext>) =>
                 holding.chainId === group.chainId &&
                 holding.address !== NATIVE_TOKEN_ADDRESS
             )
-            .map((holding) => `${holding.address}: ${holding.amount}`),
+            .map(
+              (holding) =>
+                `${holding.address}: ${formatUnits(BigInt(holding.amount), 6)}`
+            ),
         ]
           .flat()
           .join("\n"),
