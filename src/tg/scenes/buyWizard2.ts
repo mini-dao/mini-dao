@@ -69,7 +69,7 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
     });
     return ctx.wizard.next();
   },
-  // Step 2: Handle amount selection (former Step 4)
+  // Step 2: Handle amount selection
   async (ctx) => {
     if (ctx.callbackQuery && "data" in ctx.callbackQuery) {
       const action = ctx.callbackQuery.data;
@@ -78,14 +78,18 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
         case "cancel":
           await ctx.reply("Operation cancelled");
           return await ctx.scene.leave();
-
+        case "refresh":
+          // Implement refresh logic
+          await ctx.reply("Refreshing data...");
+          return;
         case "custom":
-          await ctx.reply("Please enter your desired amount:");
+          await ctx.reply("Please enter your desired amount:", {
+            reply_markup: { force_reply: true },
+          });
           return;
         case "dca":
         case "swap":
         case "limit":
-          // Implement specific trading type logic
           await ctx.reply(`Selected ${action.toUpperCase()} trading`);
           return;
         default:
@@ -95,8 +99,14 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
       }
     }
 
+    // Handle custom amount text input
     const message = ctx.message as Message.TextMessage;
     if (message?.text) {
+      const amount = parseFloat(message.text);
+      if (isNaN(amount)) {
+        await ctx.reply("Please enter a valid number");
+        return;
+      }
       await handleBuyOrder(ctx, message.text);
       return await ctx.scene.leave();
     }
@@ -108,7 +118,8 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
 async function handleBuyOrder(ctx: MyContext, amount: string) {
   const { selectedChain, tokenAddress } = ctx.scene.session;
   await ctx.reply(
-    `Order Summary:\n` +
+    "Remaining Balance:\n" +
+      `Order Summary:\n` +
       `Chain: ${selectedChain}\n` +
       `Token: ${tokenAddress}\n` +
       `Amount: ${amount}\n\n` +
