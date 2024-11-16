@@ -29,20 +29,18 @@ During EthGlobal we made a simple but working prototype. However, we have big pl
 ## Links
 - [Demo video]()
 - [Presentation slides](https://docs.google.com/presentation/d/1bTkFOcl5JRsd_-CbEslBOMwQQ3WeoVRfyV-QE56iBTY/edit?usp=sharing)
-- [Telegram bot]()
 - [Github repo](https://github.com/mini-dao/mini-dao)
 - [EthGlobal project page](https://ethglobal.com/showcase/minidao-ahbhs)
 
 ## Deployed contracts
-- [Mantle](https://explorer.sepolia.mantle.xyz/address/0x600E54Bc329169eA6ba44B98D5d50fF20800825c)
-- [Flare Network](https://coston2-explorer.flare.network/address/0x0B68EE78502411810b9503ab2F943B7Bd0c08d5A)
-- [Zircuit](https://explorer.testnet.zircuit.com/address/0x0B68EE78502411810b9503ab2F943B7Bd0c08d5A)
-- [Base](https://base-sepolia.blockscout.com/address/0x0B68EE78502411810b9503ab2F943B7Bd0c08d5A)
-- [Celo](https://celo-alfajores.blockscout.com/address/0x11e21Db0e8c85CC077C7F84C28e8f88F3EFa19Fa)
+- [Mantle](https://explorer.sepolia.mantle.xyz/address/0x7260Fa6a6F79a155C3930E9CBb64fB4ce343B88c)
+- [Flare Network](https://coston2-explorer.flare.network/address/0x50302d5C3eBdBd639951a47102168ADA72338DA2)
+- [Zircuit](https://explorer.testnet.zircuit.com/address/0xa206C4138004c4D7dfcF8724EEAa8d377935E908)
+- [Base](https://base-sepolia.blockscout.com/address/0x894dCB90F178323E5Ee62aEa642774EbFACB4323)
+- [Celo](https://celo-alfajores.blockscout.com/address/0xb3870f99F3C41d17b43fEd3D8789E2a0b97a3CF1)
 - [Scroll](https://scroll-sepolia.blockscout.com/address/0x0B68EE78502411810b9503ab2F943B7Bd0c08d5A)
 - [Polygon](https://cardona-zkevm.polygonscan.com/address/0xbFC3a250ACa9Af6f3399D2056BDB5786f9Ec6b3e)
 - [Neon EVM]()
-
 
 ## Team 
 - [arjanjohan](https://x.com/arjanjohan)
