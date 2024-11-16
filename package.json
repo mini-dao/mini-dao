@@ -15,6 +15,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@cowprotocol/cow-sdk": "^5.8.0-RC.0",
     "@curvegrid/multibaas-sdk": "^1.0.0-beta26",
     "axios": "^1.7.7",
     "dotenv": "^16.4.5",

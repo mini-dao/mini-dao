@@ -5,8 +5,8 @@ import {
   type Address,
   type Chain,
 } from "viem";
+import { getRouter } from "./dex/nanaplaza/get-router";
 import { getPublicClient } from "./get-public-client";
-import { getRouter } from "./get-router";
 import { getWalletClient } from "./get-wallet-client";
 
 export const maxAllowance = async ({

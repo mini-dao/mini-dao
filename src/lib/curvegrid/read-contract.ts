@@ -1,5 +1,5 @@
 import type { Chain } from "viem";
-import { createContractsApi } from "../multibaas";
+import { createContractsApi } from "../../multibaas";
 
 export const readContract = async (
   chain: Chain,

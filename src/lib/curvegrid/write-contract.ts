@@ -1,7 +1,7 @@
 import type { Account, Address, Chain, Hex } from "viem";
-import { createContractsApi } from "../multibaas";
-import { getPublicClient } from "./get-public-client";
-import { getWalletClient } from "./get-wallet-client";
+import { createContractsApi } from "../../multibaas";
+import { getPublicClient } from "../get-public-client";
+import { getWalletClient } from "../get-wallet-client";
 
 export const writeContract = async (
   chain: Chain,
