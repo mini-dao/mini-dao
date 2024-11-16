@@ -8,7 +8,7 @@ remappings = [
 ]
 
 [rpc_endpoints]
-sepolia = "https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+sepolia = "https://rpc.sepolia.org"
 arbitrum = "https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
 arbitrumSepolia = "https://arb-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
 optimism = "https://opt-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
