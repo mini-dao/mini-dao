@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 import {IPair} from "src/interface/IPair.sol";
 import {IERC20} from "src/interface/IERC20.sol";
 import {WETH} from "@solady/contracts/tokens/WETH.sol";
+import {DataTypes} from "src/libraries/DataTypes.sol";
 
 contract Pair is IPair {
     IERC20 public immutable token0;
@@ -14,10 +15,6 @@ contract Pair is IPair {
 
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
-
-    enum LiquidityChangeType { Add, Remove }
-    event Swap(address indexed sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out);
-    event LiquidityChange(address indexed sender, LiquidityChangeType liquidityChangeType, uint256 shares, uint256 amount0, uint256 amount1);
 
     constructor(address _token0, address _token1) {
         token0 = IERC20(_token0);
@@ -39,7 +36,7 @@ contract Pair is IPair {
         reserve1 = _reserve1;
     }
 
-    function swap(address _tokenIn, uint256 _amountIn) external returns (uint256 amountOut) {
+    function swap(address _tokenIn, uint256 _amountIn) external returns (uint256 amountOut, DataTypes.SwapData memory swapData) {
         require(
             _tokenIn == address(token0) || _tokenIn == address(token1),
             "invalid token"
@@ -76,13 +73,16 @@ contract Pair is IPair {
             token0.balanceOf(address(this)), token1.balanceOf(address(this))
         );
 
-        emit Swap(msg.sender, _amountIn, amountOut, reserve0, reserve1);
+        swapData = DataTypes.SwapData({
+            amountIn: _amountIn,
+            amountOut: amountOut,
+            tokenIn: _tokenIn,
+            reserve0: reserve0, 
+            reserve1: reserve1
+        });
     }
 
-    function addLiquidity(uint256 _amount0, uint256 _amount1)
-        external
-        returns (uint256 shares)
-    {
+    function addLiquidity(uint256 _amount0, uint256 _amount1) external returns (uint256 shares, DataTypes.LiquidityChangeData memory liquidityChangeData) {
         token0.transferFrom(msg.sender, address(this), _amount0);
         token1.transferFrom(msg.sender, address(this), _amount1);
 
@@ -172,12 +172,22 @@ contract Pair is IPair {
             token0.balanceOf(address(this)), token1.balanceOf(address(this))
         );
 
-        emit LiquidityChange(msg.sender, LiquidityChangeType.Add, shares, _amount0, _amount1);
+        //emit LiquidityChange(msg.sender, LiquidityChangeType.Add, shares, _amount0, _amount1);
+        liquidityChangeData = DataTypes.LiquidityChangeData({
+            liquidityChangeType: DataTypes.LiquidityChangeType.ADD,
+            token0: address(token0),
+            token1: address(token1),
+            amount0: _amount0,
+            amount1: _amount1,
+            shares: shares,
+            reserve0: reserve0,
+            reserve1: reserve1
+        });
     }
 
     function removeLiquidity(uint256 _shares)
         external
-        returns (uint256 amount0, uint256 amount1)
+        returns (uint256 amount0, uint256 amount1, DataTypes.LiquidityChangeData memory liquidityChangeData)
     {
         /*
         Claim
@@ -228,7 +238,17 @@ contract Pair is IPair {
         token0.transfer(msg.sender, amount0);
         token1.transfer(msg.sender, amount1);
 
-        emit LiquidityChange(msg.sender, LiquidityChangeType.Remove, _shares, amount0, amount1);
+        //emit LiquidityChange(msg.sender, LiquidityChangeType.Remove, _shares, amount0, amount1);
+        liquidityChangeData = DataTypes.LiquidityChangeData({
+            liquidityChangeType: DataTypes.LiquidityChangeType.REMOVE,
+            token0: address(token0),
+            token1: address(token1),
+            amount0: amount0,
+            amount1: amount1,
+            shares: _shares,
+            reserve0: reserve0,
+            reserve1: reserve1
+        });
     }
 
     function _sqrt(uint256 y) private pure returns (uint256 z) {
