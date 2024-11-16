@@ -10,6 +10,28 @@ Mini DAO is a telegram bot that enables DAO's inside of Telegram. Add the bot to
 - 💗 **Deposit**: Each user has their own deposit address, to keep track of their share in the DAO. We use Circles ?? to do a gasless transaction from the deposit address to the DAO wallet.
 - 🏗️ **Cash out**: Users can exit the DAO or withdraw their funds at any time. The users get a % of all tokens in the wallet based on the amount they put in the DAO before.
 
+## Instructions
+
+To get started with mini-dao, follow these steps:
+
+1. **Add the Bot to Your Group**: Invite the [mini-dao bot](https://t.me/mini_dao_bot) to your Telegram group.
+2. **Set Up Your DAO**: Follow the on-screen instructions to configure your DAO settings.
+3. **Deposit Tokens**: Use your unique deposit address to add tokens to the DAO.
+4. **Manage Your DAO**: Use the bot commands to manage and interact with your DAO.
+
+### Telegram commands
+
+Here are the available commands for interacting with mini-dao on Telegram:
+
+- **/start**: Welcome message and list of available commands.
+- **/deposit**: Show your personal deposit address. After completing the deposit, click conform to send the deposit to the mini-dao wallet.
+- **/block**: Get the latest block number.
+- **/buy [contractaddress]**: Buy a token.
+- **/sell [contractaddress]**: Sell a token.
+- **/holdings**: Check your holdings.
+- **/gas**: Get the current gas price.
+- **/help**: Show help message with available commands.
+
 ## Screenshots
 
 |      Setup              |          Buying      |
@@ -26,7 +48,8 @@ During EthGlobal we made a simple but working prototype. However, we have big pl
 - Leaderboards
 - NFT trading
 
-## Links    
+## Links
+- [Telegram bot](https://t.me/mini_dao_bot)
 - [Presentation slides](https://docs.google.com/presentation/d/1bTkFOcl5JRsd_-CbEslBOMwQQ3WeoVRfyV-QE56iBTY/edit?usp=sharing)
 - [Github repo](https://github.com/mini-dao/mini-dao)
 - [EthGlobal project page](https://ethglobal.com/showcase/minidao-ahbhs)
