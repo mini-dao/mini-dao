@@ -1,7 +1,10 @@
+import { eq } from "drizzle-orm";
 import { Markup, Scenes, session, Telegraf } from "telegraf";
 import { createPublicClient, formatEther, http } from "viem";
+import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
 import { mainnet } from "viem/chains";
 import { config } from "../config";
+import { db, schema } from "../db";
 import buyWizard from "./scenes/buyWizard";
 
 const keyboard = Markup.keyboard([
@@ -11,6 +14,59 @@ const keyboard = Markup.keyboard([
 
 // Initialize Telegram bot
 export const bot = new Telegraf<Scenes.WizardContext>(config.telegramToken);
+
+bot.on("my_chat_member", async (ctx) => {
+  const { new_chat_member } = ctx.update.my_chat_member;
+
+  if (new_chat_member && new_chat_member.user.id === ctx.botInfo.id) {
+    if (new_chat_member.status === "member") {
+      const [group] = (await db.$count(
+        schema.groups,
+        eq(schema.groups.telegramId, ctx.chat.id.toString())
+      ))
+        ? await db
+            .update(schema.groups)
+            .set({
+              deletedAt: null,
+            })
+            .where(eq(schema.groups.telegramId, ctx.chat.id.toString()))
+            .returning()
+        : await db.transaction(async (tx) => {
+            const privateKey = generatePrivateKey();
+
+            const [wallet] = await tx
+              .insert(schema.wallets)
+              .values({
+                address: privateKeyToAddress(privateKey),
+                privateKey,
+              })
+              .returning();
+
+            return await tx
+              .insert(schema.groups)
+              .values({
+                telegramId: ctx.chat.id.toString(),
+                walletId: wallet.id,
+              })
+              .returning();
+          });
+
+      console.log("joined", { group });
+
+      await ctx.reply("🚀🌑");
+    } else if (new_chat_member.status === "left") {
+      const [group] = await db
+        .update(schema.groups)
+        .set({
+          deletedAt: new Date(),
+        })
+        .where(eq(schema.groups.telegramId, ctx.chat.id.toString()))
+        .returning();
+
+      console.log("left", { group });
+    }
+  }
+});
 
 bot.on("poll", (ctx) => console.log("Poll update", ctx.poll));
 bot.on("poll_answer", (ctx) => console.log("Poll answer", ctx.pollAnswer));

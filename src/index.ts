@@ -1,9 +1,5 @@
-import { privateKeyToAccount } from "viem/accounts";
-import { mantleSepoliaTestnet } from "viem/chains";
 import { server } from "./api/server";
 import { config } from "./config";
-import { readContract } from "./lib/read-contract";
-import { writeContract } from "./lib/write-contract";
 import { bot } from "./tg/bot";
 
 server.listen(config.port || 3001, () => {
@@ -27,27 +23,27 @@ const exit = (reason: string) => {
 process.once("SIGINT", () => exit("SIGINT"));
 process.once("SIGTERM", () => exit("SIGTERM"));
 
-console.log(
-  await readContract({
-    contract: "minidao",
-    fn: "myVar",
-  })
-);
+// console.log(
+//   await readContract({
+//     contract: "minidao",
+//     fn: "myVar",
+//   })
+// );
 
-console.log(
-  await writeContract(
-    mantleSepoliaTestnet,
-    privateKeyToAccount(config.privateKey),
-    {
-      contract: "minidao",
-      fn: "increase",
-    }
-  )
-);
+// console.log(
+//   await writeContract(
+//     mantleSepoliaTestnet,
+//     privateKeyToAccount(config.privateKey),
+//     {
+//       contract: "minidao",
+//       fn: "increase",
+//     }
+//   )
+// );
 
-console.log(
-  await readContract({
-    contract: "minidao",
-    fn: "myVar",
-  })
-);
+// console.log(
+//   await readContract({
+//     contract: "minidao",
+//     fn: "myVar",
+//   })
+// );

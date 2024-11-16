@@ -2,9 +2,8 @@ import { pgTable, text } from "drizzle-orm/pg-core";
 import { createdAt } from "../columns/createdAt";
 import { id } from "../columns/id";
 
-export const wallets = pgTable("wallets", {
+export const users = pgTable("users", {
   id: id(),
-  address: text("address").notNull().unique(),
-  privateKey: text("private_key").notNull(),
+  telegramId: text("telegram_id").notNull().unique(),
   createdAt: createdAt(),
 });
