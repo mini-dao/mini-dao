@@ -6,7 +6,19 @@ import { getWalletClient } from "./get-wallet-client";
 export const writeContract = async (
   chain: Chain,
   account: Account,
-  { contract, fn, args }: { contract: string; fn: string; args?: any[] }
+  {
+    contract,
+    label,
+    fn,
+    value,
+    args,
+  }: {
+    contract: string;
+    label: string;
+    fn: string;
+    value?: string;
+    args?: any[];
+  }
 ) => {
   const walletClient = getWalletClient(chain, account);
 
@@ -15,9 +27,10 @@ export const writeContract = async (
   const {
     data: { result },
   } = await contractsApi
-    .callContractFunction("ethereum", contract, contract, fn, {
-      args,
+    .callContractFunction("ethereum", label, contract, fn, {
       from: walletClient.account.address,
+      value,
+      args,
     })
     .catch((error) => Promise.reject(error));
 

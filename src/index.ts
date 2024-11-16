@@ -1,5 +1,8 @@
+import { privateKeyToAccount } from "viem/accounts";
+import { mantleSepoliaTestnet } from "viem/chains";
 import { server } from "./api/server";
 import { config } from "./config";
+import { writeContract } from "./lib/write-contract";
 import { bot } from "./tg/bot";
 
 server.listen(config.port || 3001, () => {
@@ -30,16 +33,19 @@ process.once("SIGTERM", () => exit("SIGTERM"));
 //   })
 // );
 
-// console.log(
-//   await writeContract(
-//     mantleSepoliaTestnet,
-//     privateKeyToAccount(config.privateKey),
-//     {
-//       contract: "minidao",
-//       fn: "increase",
-//     }
-//   )
-// );
+console.log(
+  await writeContract(
+    mantleSepoliaTestnet,
+    privateKeyToAccount(config.privateKey),
+    {
+      contract: "minidao_mantle_router",
+      label: "minidao_mantle_router5",
+      fn: "buy",
+      value: "1000000000000",
+      args: ["0x89B10fe88a4bb6D4727cfE18ad6356A89BD2FE23"],
+    }
+  )
+);
 
 // console.log(
 //   await readContract({
