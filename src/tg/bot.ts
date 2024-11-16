@@ -1,17 +1,32 @@
 import { eq } from "drizzle-orm";
 import { Markup, Scenes, session, Telegraf } from "telegraf";
-import { createPublicClient, formatEther, http } from "viem";
-import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
-import { mainnet } from "viem/chains";
+import {
+  createPublicClient,
+  createWalletClient,
+  formatEther,
+  http,
+} from "viem";
+import {
+  generatePrivateKey,
+  privateKeyToAccount,
+  privateKeyToAddress,
+} from "viem/accounts";
+import { mainnet, sepolia } from "viem/chains";
 import { config } from "../config";
 import { db, schema } from "../db";
-import { getUserWallet } from "./helpers";
+import { getPublicClient } from "../lib/get-public-client";
+import { getGroupWallet, getUserWallet } from "./helpers";
 import buyWizard from "./scenes/buyWizard2";
 
 const keyboard = Markup.keyboard([
   Markup.button.pollRequest("Create poll", "regular"),
   Markup.button.pollRequest("Create quiz", "quiz"),
 ]);
+
+const client = createPublicClient({
+  chain: sepolia,
+  transport: http(),
+});
 
 // Initialize Telegram bot
 export const bot = new Telegraf<Scenes.WizardContext>(config.telegramToken);
@@ -108,14 +123,42 @@ bot.command("deposit", async (ctx) => {
   }
 });
 
+bot.action("deposit_done", async (ctx) => {
+  const { wallet } = await getUserWallet(ctx);
+  const { wallet: groupWallet } = await getGroupWallet(ctx);
+
+  const balance = await client.getBalance({
+    address: wallet.address as `0x${string}`,
+  });
+  console.log("🚀 ~ bot.action ~ balance:", balance);
+
+  const gasPrice = await getPublicClient(sepolia).getGasPrice();
+  console.log("🚀 ~ bot.action ~ gasPrice:", gasPrice);
+
+  const walletClient = createWalletClient({
+    account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
+    chain: sepolia,
+    transport: http(),
+  });
+
+  const depositAmount = balance - BigInt(gasPrice) * 50000n;
+  console.log("🚀 ~ bot.action ~ depositAmount:", depositAmount);
+
+  const hash = await walletClient.sendTransaction({
+    account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
+    to: groupWallet.address as `0x${string}`,
+    value: depositAmount,
+    gas: 30000n,
+  });
+
+  console.log("🚀 ~ bot.action ~ wallet:", wallet);
+  console.log("🚀 ~ bot.action ~ groupWallet:", groupWallet);
+
+  await ctx.reply("✅ Deposit done!");
+});
+
 bot.on("poll", (ctx) => console.log("Poll update", ctx.poll));
 bot.on("poll_answer", (ctx) => console.log("Poll answer", ctx.pollAnswer));
-
-// Initialize Viem client
-const client = createPublicClient({
-  chain: mainnet,
-  transport: http(),
-});
 
 // Initialize session and stage
 
