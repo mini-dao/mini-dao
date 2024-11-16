@@ -1,11 +1,6 @@
-import { eq } from "drizzle-orm";
 import { Markup, Scenes, session, Telegraf } from "telegraf";
 import { createWalletClient, formatEther, http, type Chain } from "viem";
-import {
-  generatePrivateKey,
-  privateKeyToAccount,
-  privateKeyToAddress,
-} from "viem/accounts";
+import { privateKeyToAccount } from "viem/accounts";
 import {
   mainnet,
   mantleSepoliaTestnet,
@@ -13,9 +8,10 @@ import {
   sepolia,
 } from "viem/chains";
 import { config } from "../config";
-import { db, schema } from "../db";
 import { buy } from "../lib/dex/buy";
 import { getPublicClient } from "../lib/get-public-client";
+import { holdings } from "./commands/holdings";
+import { myChatMember } from "./events/my-chat-member";
 import { getGroupWallet, getUserWallet } from "./helpers";
 import buyWizard, { pendingTransactions } from "./scenes/buyWizard2";
 
@@ -46,58 +42,15 @@ const switchChain = (chainName: string) => {
 // Initialize Telegram bot
 export const bot = new Telegraf<Scenes.WizardContext>(config.telegramToken);
 
-bot.on("my_chat_member", async (ctx) => {
-  const { new_chat_member } = ctx.update.my_chat_member;
+/**
+ * events
+ */
+myChatMember(bot);
 
-  if (new_chat_member && new_chat_member.user.id === ctx.botInfo.id) {
-    if (new_chat_member.status === "member") {
-      const [group] = (await db.$count(
-        schema.groups,
-        eq(schema.groups.telegramId, ctx.chat.id.toString())
-      ))
-        ? await db
-            .update(schema.groups)
-            .set({
-              deletedAt: null,
-            })
-            .where(eq(schema.groups.telegramId, ctx.chat.id.toString()))
-            .returning()
-        : await db.transaction(async (tx) => {
-            const privateKey = generatePrivateKey();
-
-            const [wallet] = await tx
-              .insert(schema.wallets)
-              .values({
-                address: privateKeyToAddress(privateKey),
-                privateKey,
-              })
-              .returning();
-
-            return await tx
-              .insert(schema.groups)
-              .values({
-                telegramId: ctx.chat.id.toString(),
-                walletId: wallet.id,
-              })
-              .returning();
-          });
-
-      console.log("joined", { group });
-
-      await ctx.reply("🚀🌑");
-    } else if (new_chat_member.status === "left") {
-      const [group] = await db
-        .update(schema.groups)
-        .set({
-          deletedAt: new Date(),
-        })
-        .where(eq(schema.groups.telegramId, ctx.chat.id.toString()))
-        .returning();
-
-      console.log("left", { group });
-    }
-  }
-});
+/**
+ * commands
+ */
+holdings(bot);
 
 bot.command("switchChain", async (ctx) => {
   await ctx.reply(
@@ -179,14 +132,13 @@ bot.action("deposit_done", async (ctx) => {
     transport: http(),
   });
 
-  const depositAmount = balance - BigInt(gasPrice) * 300000000n;
+  const depositAmount = balance - BigInt(gasPrice) * 30000n;
   console.log("🚀 ~ bot.action ~ depositAmount:", depositAmount);
 
   const hash = await walletClient.sendTransaction({
     account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
     to: groupWallet.address as `0x${string}`,
     value: depositAmount,
-    gas: currentChain.id === 5003 ? 300000000n : 30000n,
   });
 
   console.log("🚀 ~ bot.action ~ wallet:", wallet);

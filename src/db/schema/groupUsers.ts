@@ -1,3 +1,4 @@
+import { relations } from "drizzle-orm";
 import { pgTable, text, unique, uuid } from "drizzle-orm/pg-core";
 import { createdAt } from "../columns/createdAt";
 import { id } from "../columns/id";
@@ -11,7 +12,7 @@ export const groupUsers = pgTable(
     groupId: uuid("group_id")
       .notNull()
       .references(() => groups.id),
-    telegramId: text("telegram_id").notNull().unique(),
+    telegramId: text("telegram_id").notNull(),
     walletId: uuid("wallet_id")
       .notNull()
       .references(() => wallets.id),
@@ -19,3 +20,14 @@ export const groupUsers = pgTable(
   },
   (groupUsers) => [unique().on(groupUsers.groupId, groupUsers.telegramId)]
 );
+
+export const groupUserRelations = relations(groupUsers, ({ one, many }) => ({
+  group: one(groups, {
+    fields: [groupUsers.groupId],
+    references: [groups.id],
+  }),
+  wallet: one(wallets, {
+    fields: [groupUsers.walletId],
+    references: [wallets.id],
+  }),
+}));

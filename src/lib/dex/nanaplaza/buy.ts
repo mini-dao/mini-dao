@@ -16,6 +16,8 @@ export const buy = async ({
 }) => {
   const { contract, label } = getRouter(chain);
 
+  console.log("writeContract");
+
   const receipt = await writeContract(chain, account, {
     contract,
     label,
