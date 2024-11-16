@@ -4,7 +4,7 @@
 
 Mini DAO is a telegram bot that enables DAO's inside of Telegram. Add the bot to your telegram group to get started. The group members can deposit tokens to the bot wallet, and then trade together.
 
-⚙️ Built using Telegram, ??? TODO .
+⚙️ Built using Telegram, Curvegrid, Supabase, Telegraph, Drizzle and Solidity  .
 
 - 🗳️ **Quickly create a DAO**: Create a new Telegram group with the bot, or add the bot to your existing group chats. 
 - 💗 **Deposit**: Each user has their own deposit address, to keep track of their share in the DAO. We use Circles ?? to do a gasless transaction from the deposit address to the DAO wallet.
