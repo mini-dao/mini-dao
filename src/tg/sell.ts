@@ -1,20 +1,23 @@
-import type { Account, Chain } from "viem";
+import type { Account, Address, Chain } from "viem";
 import { getPair } from "../lib/get-pair";
 import { getRouter } from "../lib/get-router";
+import { maxAllowance } from "../lib/max-allowance";
 import { writeContract } from "../lib/write-contract";
 
 export const sell = async ({
-  chain,
   account,
+  chain,
   token,
   amount,
 }: {
-  chain: Chain;
   account: Account;
-  token: string;
+  chain: Chain;
+  token: Address;
   amount: string;
 }) => {
   const { contract, label } = getRouter(chain);
+
+  await maxAllowance({ account, chain, token });
 
   return await writeContract(chain, account, {
     contract,

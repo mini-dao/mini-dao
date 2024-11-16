@@ -4,13 +4,13 @@ import { getRouter } from "../lib/get-router";
 import { writeContract } from "../lib/write-contract";
 
 export const buy = async ({
-  chain,
   account,
+  chain,
   token,
   amount,
 }: {
-  chain: Chain;
   account: Account;
+  chain: Chain;
   token: string;
   amount: string;
 }) => {
