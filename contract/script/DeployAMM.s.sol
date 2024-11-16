@@ -4,7 +4,8 @@ pragma solidity 0.8.28;
 import "forge-std/Script.sol";
 import {Pair} from "src/Pair.sol";
 import {Tkn} from "src/Tkn.sol";
-import {IERC20} from "src/IERC20.sol";
+import {IERC20} from "src/interface/IERC20.sol";
+import {WETH} from "@solady/contracts/tokens/WETH.sol";
 import {Router} from "src/Router.sol";
 
 struct Token {
@@ -25,25 +26,24 @@ contract DeployAMM is Script {
         Tkn doge = new Tkn("Doge", "DOGE", 6, 1_000_000);
         Tkn shib = new Tkn("Shib", "SHIB", 6, 1_000_000);
         Tkn trump = new Tkn("Trump", "TRUMP", 6, 1_000_000);
-        Tkn usdc = new Tkn("USDC", "USDC", 6, 1_000_000_000_000_000_000);
+        WETH weth = new WETH();
 
-        Pair pepePair = new Pair(address(pepe), address(usdc));
-        Pair dogePair = new Pair(address(doge), address(usdc));
-        Pair shibPair = new Pair(address(shib), address(usdc));
-        Pair trumpPair = new Pair(address(trump), address(usdc));
+        Pair pepePair = new Pair(address(weth), address(pepe));
+        Pair dogePair = new Pair(address(weth), address(doge));
+        Pair shibPair = new Pair(address(weth), address(shib));
+        Pair trumpPair = new Pair(address(weth), address(trump));
 
-        Router router = new Router();
+        Router router = new Router(address(weth));
 
         pepe.approve(address(router), type(uint256).max);
         doge.approve(address(router), type(uint256).max);
         shib.approve(address(router), type(uint256).max);
         trump.approve(address(router), type(uint256).max);
-        usdc.approve(address(router), type(uint256).max);
 
-        router.addLiquidity(address(pepePair), IERC20(address(pepe)).balanceOf(pubKey), IERC20(address(usdc)).balanceOf(pubKey) / 8);
-        router.addLiquidity(address(dogePair), IERC20(address(doge)).balanceOf(pubKey), IERC20(address(usdc)).balanceOf(pubKey) / 8);
-        router.addLiquidity(address(shibPair), IERC20(address(shib)).balanceOf(pubKey), IERC20(address(usdc)).balanceOf(pubKey) / 8);
-        router.addLiquidity(address(trumpPair), IERC20(address(trump)).balanceOf(pubKey), IERC20(address(usdc)).balanceOf(pubKey) / 8);
+        router.addLiquidity{value: pubKey.balance / 8}(address(pepePair), IERC20(address(pepe)).balanceOf(pubKey));
+        router.addLiquidity{value: pubKey.balance / 8}(address(dogePair), IERC20(address(doge)).balanceOf(pubKey));
+        router.addLiquidity{value: pubKey.balance / 8}(address(shibPair), IERC20(address(shib)).balanceOf(pubKey));
+        router.addLiquidity{value: pubKey.balance / 8}(address(trumpPair), IERC20(address(trump)).balanceOf(pubKey));
 
         console2.log("Router: ", address(router));
         console2.log("Pepe Pair: ", address(pepePair));
@@ -54,7 +54,7 @@ contract DeployAMM is Script {
         console2.log("Doge: ", address(doge));
         console2.log("Shib: ", address(shib));
         console2.log("Trump: ", address(trump));
-        console2.log("USDC: ", address(usdc));
+        console2.log("WETH: ", address(weth));
 
         vm.stopBroadcast();
     }
