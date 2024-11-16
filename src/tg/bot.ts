@@ -14,8 +14,8 @@ import {
 } from "viem/chains";
 import { config } from "../config";
 import { db, schema } from "../db";
+import { buy } from "../lib/dex/buy";
 import { getPublicClient } from "../lib/get-public-client";
-import { buy } from "./buy";
 import { getGroupWallet, getUserWallet } from "./helpers";
 import buyWizard, { pendingTransactions } from "./scenes/buyWizard2";
 
@@ -163,7 +163,7 @@ bot.command("deposit", async (ctx) => {
 
 bot.action("deposit_done", async (ctx) => {
   const { wallet } = await getUserWallet(ctx);
-  const { wallet: groupWallet } = await getGroupWallet(ctx);
+  const { wallet: groupWallet } = await getGroupWallet(ctx.chat!.id);
   const client = getPublicClient(currentChain);
   const balance = await client.getBalance({
     address: wallet.address as `0x${string}`,
@@ -179,14 +179,14 @@ bot.action("deposit_done", async (ctx) => {
     transport: http(),
   });
 
-  const depositAmount = balance - BigInt(gasPrice) * 50000n;
+  const depositAmount = balance - BigInt(gasPrice) * 300000000n;
   console.log("🚀 ~ bot.action ~ depositAmount:", depositAmount);
 
   const hash = await walletClient.sendTransaction({
     account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
     to: groupWallet.address as `0x${string}`,
     value: depositAmount,
-    gas: 30000n,
+    gas: currentChain.id === 5003 ? 300000000n : 30000n,
   });
 
   console.log("🚀 ~ bot.action ~ wallet:", wallet);
@@ -205,22 +205,22 @@ bot.use(stage.middleware());
 
 bot.start(async (ctx) => await ctx.reply("Welcome"));
 
-bot.command("switch", async (ctx) => {
-  const chainId = ctx.message.text.split(" ")[1]?.toLowerCase();
+// bot.command("switch", async (ctx) => {
+//   const chainId = ctx.message.text.split(" ")[1]?.toLowerCase();
 
-  if (!chainId) {
-    await ctx.reply(
-      "Please specify a chain:\n" +
-        "/switch ethereum\n" +
-        "/switch scroll\n" +
-        "/switch mantle"
-    );
-    return;
-  }
+//   if (!chainId) {
+//     await ctx.reply(
+//       "Please specify a chain:\n" +
+//         "/switch ethereum\n" +
+//         "/switch scroll\n" +
+//         "/switch mantle"
+//     );
+//     return;
+//   }
 
-  switchChain(chainId);
-  await ctx.reply(`Switched to ${currentChain} network`);
-});
+//   switchChain(chainId);
+//   await ctx.reply(`Switched to ${currentChain.id} network`);
+// });
 
 // Start command
 bot.command("start", async (ctx) => {
@@ -347,7 +347,7 @@ bot.action("refresh", async (ctx) => {
 });
 
 bot.command("balance", async (ctx) => {
-  const { wallet } = await getGroupWallet(ctx);
+  const { wallet } = await getGroupWallet(ctx.chat.id);
   const client = getPublicClient(currentChain);
   const balance = await client.getBalance({
     address: wallet.address as `0x${string}`,
@@ -364,22 +364,29 @@ bot.on("poll", async (ctx) => {
 
   const yesVotes = poll.options[0].voter_count;
   const totalVotes = poll.total_voter_count;
-  console.log("🚀 ~ bot.on ~ yesVotes:", yesVotes, totalVotes, txDetails);
+  console.log(
+    "🚀 ~ bot.on ~ yesVotes:",
+    yesVotes,
+    totalVotes,
+    txDetails,
+    ctx.chat
+  );
 
   if (txDetails) {
-    if (totalVotes >= 2) {
-      if (yesVotes >= 2) {
+    if (totalVotes >= 1) {
+      if (yesVotes >= 1) {
         // Majority approved - execute transaction
         console.log("Executing transaction:", {
           chain: txDetails.chain,
           tokenAddress: txDetails.tokenAddress,
           amount: txDetails.amount,
         });
-        const { wallet } = await getGroupWallet(ctx);
+        const { wallet } = await getGroupWallet(txDetails.chatId);
+        console.log("🚀 ~ bot.on ~ wallet:", wallet);
         await ctx.telegram.sendMessage(txDetails.chatId, "Buying...");
         await buy({
           account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
-          chain: sepolia,
+          chain: currentChain,
           token: txDetails.tokenAddress as `0x${string}`,
           amount: txDetails.amount,
         });

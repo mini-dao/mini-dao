@@ -23,7 +23,7 @@ type MyContext = Scenes.WizardContext<MyWizardSession>;
 const amounts = ["0.1", "0.5", "1.0", "2.0", "Custom"];
 
 // Add default chain constant
-const DEFAULT_CHAIN = "mantle";
+const DEFAULT_CHAIN = "sepolia";
 
 // Modify the wizard to start from token info when address is provided
 const buyWizard = new Scenes.WizardScene<MyContext>(

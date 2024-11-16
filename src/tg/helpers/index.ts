@@ -62,11 +62,14 @@ export const getUserWallet = async (ctx: Context) => {
   })();
 };
 
-export const getGroupWallet = async (ctx: Context) => {
+export const getGroupWallet = async (chatId: number) => {
+  console.log("🚀 ~ getGroupWallet ~ chatId:", chatId);
+
   const [group] = await db
     .select()
     .from(schema.groups)
-    .where(eq(schema.groups.telegramId, ctx.chat!.id.toString()));
+    .where(eq(schema.groups.telegramId, chatId.toString()));
+  console.log("🚀 ~ getGroupWal ~ group:", group);
 
   if (!group) {
     throw new Error("group not found.");
@@ -78,32 +81,32 @@ export const getGroupWallet = async (ctx: Context) => {
       .select()
       .from(schema.groups)
       .innerJoin(schema.wallets, eq(schema.wallets.id, schema.groups.walletId))
-      .where(eq(schema.groups.telegramId, ctx.chat!.id.toString()));
+      .where(eq(schema.groups.telegramId, chatId.toString()));
 
-    if (!join) {
-      return await db.transaction(async (tx) => {
-        const privateKey = generatePrivateKey();
+    // if (!join) {
+    //   return await db.transaction(async (tx) => {
+    //     const privateKey = generatePrivateKey();
 
-        const [wallet] = await tx
-          .insert(schema.wallets)
-          .values({
-            address: privateKeyToAddress(privateKey),
-            privateKey,
-          })
-          .returning();
+    //     const [wallet] = await tx
+    //       .insert(schema.wallets)
+    //       .values({
+    //         address: privateKeyToAddress(privateKey),
+    //         privateKey,
+    //       })
+    //       .returning();
 
-        // Update group with new wallet
-        const [updatedGroup] = await tx
-          .update(schema.groups)
-          .set({
-            walletId: wallet.id,
-          })
-          .where(eq(schema.groups.id, group.id))
-          .returning();
+    //     // Update group with new wallet
+    //     const [updatedGroup] = await tx
+    //       .update(schema.groups)
+    //       .set({
+    //         walletId: wallet.id,
+    //       })
+    //       .where(eq(schema.groups.id, group.id))
+    //       .returning();
 
-        return { group: updatedGroup, wallet };
-      });
-    }
+    //     return { group: updatedGroup, wallet };
+    //   });
+    // }
 
     return {
       group: join.groups,
