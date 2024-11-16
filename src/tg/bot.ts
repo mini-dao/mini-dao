@@ -5,7 +5,7 @@ import { generatePrivateKey, privateKeyToAddress } from "viem/accounts";
 import { mainnet } from "viem/chains";
 import { config } from "../config";
 import { db, schema } from "../db";
-import buyWizard from "./scenes/buyWizard";
+import buyWizard from "./scenes/buyWizard2";
 
 const keyboard = Markup.keyboard([
   Markup.button.pollRequest("Create poll", "regular"),

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
-import {IPair} from "./interface/IPair.sol";
-import {IERC20} from "./IERC20.sol";
+import {IPair} from "src/interface/IPair.sol";
+import {IERC20} from "src/interface/IERC20.sol";
+import {WETH} from "@solady/contracts/tokens/WETH.sol";
 
 contract Pair is IPair {
     IERC20 public immutable token0;
