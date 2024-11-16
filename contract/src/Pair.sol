@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
-contract CPAMM {
+import {IPair} from "./interface/IPair.sol";
+import {IERC20} from "./IERC20.sol";
+
+contract Pair is IPair {
     IERC20 public immutable token0;
     IERC20 public immutable token1;
 
@@ -10,6 +13,10 @@ contract CPAMM {
 
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
+
+    enum LiquidityChangeType { Add, Remove }
+    event Swap(address indexed sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out);
+    event LiquidityChange(address indexed sender, LiquidityChangeType liquidityChangeType, uint256 shares, uint256 amount0, uint256 amount1);
 
     constructor(address _token0, address _token1) {
         token0 = IERC20(_token0);
@@ -31,10 +38,7 @@ contract CPAMM {
         reserve1 = _reserve1;
     }
 
-    function swap(address _tokenIn, uint256 _amountIn)
-        external
-        returns (uint256 amountOut)
-    {
+    function swap(address _tokenIn, uint256 _amountIn) external returns (uint256 amountOut) {
         require(
             _tokenIn == address(token0) || _tokenIn == address(token1),
             "invalid token"
@@ -70,6 +74,8 @@ contract CPAMM {
         _update(
             token0.balanceOf(address(this)), token1.balanceOf(address(this))
         );
+
+        emit Swap(msg.sender, _amountIn, amountOut, reserve0, reserve1);
     }
 
     function addLiquidity(uint256 _amount0, uint256 _amount1)
@@ -164,6 +170,8 @@ contract CPAMM {
         _update(
             token0.balanceOf(address(this)), token1.balanceOf(address(this))
         );
+
+        emit LiquidityChange(msg.sender, LiquidityChangeType.Add, shares, _amount0, _amount1);
     }
 
     function removeLiquidity(uint256 _shares)
@@ -218,6 +226,8 @@ contract CPAMM {
 
         token0.transfer(msg.sender, amount0);
         token1.transfer(msg.sender, amount1);
+
+        emit LiquidityChange(msg.sender, LiquidityChangeType.Remove, _shares, amount0, amount1);
     }
 
     function _sqrt(uint256 y) private pure returns (uint256 z) {
@@ -236,20 +246,4 @@ contract CPAMM {
     function _min(uint256 x, uint256 y) private pure returns (uint256) {
         return x <= y ? x : y;
     }
-}
-
-interface IERC20 {
-    function totalSupply() external view returns (uint256);
-    function balanceOf(address account) external view returns (uint256);
-    function transfer(address recipient, uint256 amount)
-        external
-        returns (bool);
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
-    function approve(address spender, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount)
-        external
-        returns (bool);
 }
