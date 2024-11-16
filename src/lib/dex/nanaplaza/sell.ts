@@ -19,12 +19,12 @@ export const sell = async ({
 
   await maxAllowance({ account, chain, token });
 
-  const receipt = await writeContract(chain, account, {
+  await writeContract(chain, account, {
     contract,
     label,
     fn: "sell",
     args: [getPair(chain, token), amount],
   });
 
-  console.log("[nanaplaza]", "sell", { receipt });
+  console.log("[nanaplaza]", "sell");
 };

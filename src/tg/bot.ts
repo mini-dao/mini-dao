@@ -1,7 +1,11 @@
+import { and, eq } from "drizzle-orm";
 import { Scenes, session, Telegraf } from "telegraf";
 import { parseUnits } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { config } from "../config";
+import { db, schema } from "../db";
+import { decrement } from "../db/sql/decrement";
+import { increment } from "../db/sql/increment";
 import { sell } from "../lib/dex";
 import { buy } from "../lib/dex/buy";
 import { getChain } from "../lib/get-chain";
@@ -204,6 +208,30 @@ bot.on("poll", async (ctx) => {
             token: txDetails.tokenAddress as `0x${string}`,
             amount: parseUnits(txDetails.amount.toString(), 18).toString(),
           });
+
+          const pepe = parseUnits(txDetails.amount.toString(), 18) / 10n ** 14n;
+
+          await db
+            .insert(schema.walletHoldings)
+            .values({
+              walletId: group.wallet.id,
+              chainId: chain.id,
+              address: txDetails.tokenAddress,
+              amount: pepe.toString(),
+            })
+            .onConflictDoUpdate({
+              target: [
+                schema.walletHoldings.walletId,
+                schema.walletHoldings.chainId,
+                schema.walletHoldings.address,
+              ],
+              set: {
+                amount: increment(
+                  schema.walletHoldings.amount,
+                  pepe.toString()
+                ),
+              },
+            });
         } else if (txDetails.type === "sell") {
           await ctx.telegram.sendMessage(txDetails.chatId, "Selling...");
 
@@ -213,6 +241,22 @@ bot.on("poll", async (ctx) => {
             token: txDetails.tokenAddress as `0x${string}`,
             amount: parseUnits(txDetails.amount.toString(), 6).toString(),
           });
+
+          await db
+            .update(schema.walletHoldings)
+            .set({
+              amount: decrement(
+                schema.walletHoldings.amount,
+                parseUnits(txDetails.amount.toString(), 6).toString()
+              ),
+            })
+            .where(
+              and(
+                eq(schema.walletHoldings.walletId, group.wallet.id),
+                eq(schema.walletHoldings.chainId, chain.id),
+                eq(schema.walletHoldings.address, txDetails.tokenAddress)
+              )
+            );
         }
         await ctx.telegram.sendMessage(
           txDetails.chatId,

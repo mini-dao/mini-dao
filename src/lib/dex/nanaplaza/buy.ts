@@ -18,7 +18,7 @@ export const buy = async ({
 
   console.log("writeContract");
 
-  const receipt = await writeContract(chain, account, {
+  await writeContract(chain, account, {
     contract,
     label,
     fn: "buy",
@@ -26,5 +26,5 @@ export const buy = async ({
     args: [getPair(chain, token)],
   });
 
-  console.log("[nanaplaza]", "buy", { receipt });
+  console.log("[nanaplaza]", "buy");
 };

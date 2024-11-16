@@ -32,8 +32,7 @@ export const holdings = (bot: Telegraf<Scenes.WizardContext>) =>
                 holding.address !== NATIVE_TOKEN_ADDRESS
             )
             .map(
-              (holding) =>
-                `${holding.address}: ${formatUnits(BigInt(holding.amount), 6)}`
+              (holding) => `PEPE: ${formatUnits(BigInt(holding.amount), 6)}`
             ),
         ]
           .flat()
