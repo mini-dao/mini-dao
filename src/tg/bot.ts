@@ -132,10 +132,10 @@ bot.command("deposit", async (ctx) => {
     // Send response with wallet address
 
     await ctx.reply(
-      `🏦 Your deposit address:\n\n +
-          \`${wallet.address}\`\n\n +
-          ✅ Send tokens to this address to deposit them into your account.\n +
-          ⚠️ Only send tokens on supported networks!`,
+      `🏦 Your deposit address:\n\n` +
+        `\`${wallet.address}\`\n\n` +
+        `✅ Send tokens to this address to deposit them into your account.\n` +
+        `⚠️ Only send tokens on supported networks!`,
       {
         parse_mode: "Markdown",
         ...Markup.inlineKeyboard([
