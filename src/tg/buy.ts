@@ -1,4 +1,5 @@
-import type { Account, Chain } from "viem";
+import type { Account, Address, Chain } from "viem";
+import { mantle, sepolia } from "viem/chains";
 import { getPair } from "../lib/get-pair";
 import { getRouter } from "../lib/get-router";
 import { writeContract } from "../lib/write-contract";
@@ -11,16 +12,33 @@ export const buy = async ({
 }: {
   account: Account;
   chain: Chain;
-  token: string;
+  token: Address;
   amount: string;
 }) => {
   const { contract, label } = getRouter(chain);
 
+  const { fn, args } = (() => {
+    switch (chain.name) {
+      case mantle.name:
+        return {
+          fn: "buy",
+          args: [getPair(chain, token)],
+        };
+      case sepolia.name:
+        return {
+          fn: "",
+          args: [],
+        };
+    }
+
+    throw new Error("dex not found.");
+  })();
+
   return await writeContract(chain, account, {
     contract,
     label,
-    fn: "buy",
+    fn,
     value: amount,
-    args: [getPair(token)],
+    args,
   });
 };

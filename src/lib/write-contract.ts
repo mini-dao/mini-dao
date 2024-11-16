@@ -1,5 +1,5 @@
 import type { Account, Address, Chain, Hex } from "viem";
-import { contractsApi } from "../multibaas";
+import { createContractsApi } from "../multibaas";
 import { getPublicClient } from "./get-public-client";
 import { getWalletClient } from "./get-wallet-client";
 
@@ -26,7 +26,7 @@ export const writeContract = async (
 
   const {
     data: { result },
-  } = await contractsApi
+  } = await createContractsApi(chain)
     .callContractFunction("ethereum", label, contract, fn, {
       from: walletClient.account.address,
       value,

@@ -9,7 +9,15 @@ export const config = {
   port: process.env.PORT as string,
   databaseUrl: process.env.DATABASE_URL as string,
   telegramToken: process.env.TELEGRAM_TOKEN as string,
-  multibaasKey: process.env.MULTIBAAS_KEY as string,
-  multibaasBasePath: process.env.MULTIBAAS_BASE_PATH as string,
+  multibaas: {
+    mantleSepolia: {
+      key: process.env.MULTIBAAS_MANTLE_SEPOLIA_KEY as string,
+      basePath: process.env.MULTIBAAS_MANTLE_SEPOLIA_BASE_PATH as string,
+    },
+    sepolia: {
+      key: process.env.MULTIBAAS_SEPOLIA_KEY as string,
+      basePath: process.env.MULTIBAAS_SEPOLIA_BASE_PATH as string,
+    },
+  },
   privateKey: process.env.PRIVATE_KEY as Hex,
 };

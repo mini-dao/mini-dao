@@ -1,17 +1,21 @@
-import { contractsApi } from "../multibaas";
+import type { Chain } from "viem";
+import { createContractsApi } from "../multibaas";
 
-export const readContract = async ({
-  contract,
-  label,
-  fn,
-}: {
-  contract: string;
-  label: string;
-  fn: string;
-}) => {
+export const readContract = async (
+  chain: Chain,
+  {
+    contract,
+    label,
+    fn,
+  }: {
+    contract: string;
+    label: string;
+    fn: string;
+  }
+) => {
   const {
     data: { result },
-  } = await contractsApi
+  } = await createContractsApi(chain)
     .callContractFunction("ethereum", label, contract, fn, {})
     .catch((error) => Promise.reject(error));
 
