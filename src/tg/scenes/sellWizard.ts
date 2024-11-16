@@ -1,5 +1,7 @@
-import { Scenes } from "telegraf";
+import { Markup, Scenes } from "telegraf";
 import type { Message } from "telegraf/types";
+import { getChain } from "../../lib/get-chain";
+import { getGroup } from "../../lib/get-group";
 import { pendingTransactions } from "../types/pending-transactions";
 
 const tokenAddressRegex = /^0x[a-fA-F0-9]{40}$/;
@@ -30,7 +32,10 @@ const sellWizard = new Scenes.WizardScene<MyContext>(
   async (ctx) => {
     // Set default chain
     ctx.scene.session.selectedChain = DEFAULT_CHAIN;
+    console.log("🚀 ~ sellWizard ~ ctx.message:", ctx.chat?.id);
+    const group = await getGroup(ctx.chat?.id!.toString() ?? "");
 
+    const chain = getChain(group.chainId);
     // Get token address from command
     const message = ctx.message as Message.TextMessage;
     const tokenAddress = message.text?.split(" ")[1];
@@ -45,7 +50,7 @@ const sellWizard = new Scenes.WizardScene<MyContext>(
 
     // Show token info
     await ctx.reply(
-      `Current Balance: \nToken Info:\nAddress: ${tokenAddress}\nChain: ${DEFAULT_CHAIN}\n[Chart Link]`
+      `Current PEPE Balance: \nAddress: ${tokenAddress}\nChain: ${chain.name}\n`
     );
 
     // New keyboard layout
@@ -54,9 +59,16 @@ const sellWizard = new Scenes.WizardScene<MyContext>(
         [{ text: "Cancel", callback_data: "cancel" }],
         [{ text: "✅ Swap", callback_data: "swap" }],
         [
-          { text: "SELL 1.0 ETH", callback_data: "1.0" },
-          { text: "SELL 2.0 ETH", callback_data: "2.0" },
-          { text: "SELL X ETH", callback_data: "custom" },
+          { text: "SELL 100 PEPE", callback_data: "100" },
+          { text: "SELL 50 PEPE", callback_data: "50" },
+          { text: "SELL X PEPE", callback_data: "custom" },
+        ],
+        [
+          Markup.button.url(
+            "View PEPE on Blockscout",
+            // TODO: use blockscout?
+            `https://eth-sepolia.blockscout.com/address/${tokenAddress}`
+          ),
         ],
       ],
     };
@@ -128,8 +140,8 @@ async function handleSellOrder(ctx: MyContext, amount: string) {
     `━━━━━━━━━━━━━━━\n\n` +
     `🔗 *Network:* ${selectedChain}\n` +
     `🪙 *Token:* \`${tokenAddress}\`\n` +
-    `💰 *Amount:* ${amount} ETH\n` +
-    `💵 *Balance:* 0.0 ETH\n\n` +
+    `💰 *Amount:* ${amount} PEPE\n` +
+    `💵 *Balance:* 0.0 PEPE\n\n` +
     `━━━━━━━━━━━━━━━`;
 
   await ctx.reply(orderSummary, {

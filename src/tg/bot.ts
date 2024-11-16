@@ -84,12 +84,12 @@ bot.start(async (ctx) => await ctx.reply("Welcome"));
 bot.command("start", async (ctx) => {
   await ctx.reply(
     "Welcome to MiniDAO Bot! 🤖\n\n" +
-      "/balance - Check ETH balance\n" +
       "/deposit - Get deposit address\n" +
       "/block - Get latest block number\n" +
       "/buy - Buy a token\n" +
       "/sell - Sell a token\n" +
-      "/leaderboard - Display leaderboard\n" +
+      "/holdings - Check your holdings\n" +
+      // "/leaderboard - Display leaderboard\n" +
       "/gas - Get current gas price\n" +
       "/help - Show this help message"
   );
@@ -99,12 +99,12 @@ bot.command("start", async (ctx) => {
 bot.command("help", async (ctx) => {
   await ctx.reply(
     "Available commands:\n" +
-      "/balance - Check ETH balance\n" +
       "/deposit - Get deposit address\n" +
       "/block - Get latest block number\n" +
       "/buy - Buy a token\n" +
       "/sell - Sell a token\n" +
-      "/leaderboard - Display leaderboard\n" +
+      "/holdings - Check your holdings\n" +
+      // "/leaderboard - Display leaderboard\n" +
       "/gas - Get current gas price"
   );
 });
@@ -186,8 +186,8 @@ bot.on("poll", async (ctx) => {
 
     const chain = getChain(group.chainId);
 
-    if (totalVotes >= 1) {
-      if (yesVotes >= 1) {
+    if (totalVotes >= 2) {
+      if (yesVotes >= 2) {
         // Majority approved - execute transaction
         console.log("Executing transaction:", {
           chain: txDetails.chain,
