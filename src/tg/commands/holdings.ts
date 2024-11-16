@@ -1,10 +1,13 @@
 import type { Scenes, Telegraf } from "telegraf";
+import { getChain } from "../../lib/get-chain";
 import { getGroup } from "../../lib/get-group";
 import { NATIVE_TOKEN_ADDRESS } from "../../lib/native-token-address";
 
 export const holdings = (bot: Telegraf<Scenes.WizardContext>) =>
   bot.command("holdings", async (ctx) => {
     const group = await getGroup(ctx.chat.id.toString());
+
+    const chain = getChain(group.chainId);
 
     const nativeHolding = group.wallet.holdings.find(
       (holding) =>
@@ -15,7 +18,9 @@ export const holdings = (bot: Telegraf<Scenes.WizardContext>) =>
     await ctx.reply(
       [
         `🔗 ${group.chainId}`,
-        `🏦 Native balance: ${nativeHolding?.amount ?? "0"}`,
+        `🏦 Native balance: ${nativeHolding?.amount ?? "0"} ${
+          chain.nativeCurrency.symbol
+        }`,
         [
           `🏦 Other balances:`,
           group.wallet.holdings

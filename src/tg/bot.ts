@@ -1,44 +1,26 @@
-import { Markup, Scenes, session, Telegraf } from "telegraf";
-import { formatEther, type Chain } from "viem";
+import { Scenes, session, Telegraf } from "telegraf";
 import { privateKeyToAccount } from "viem/accounts";
-import {
-  mainnet,
-  mantleSepoliaTestnet,
-  scrollSepolia,
-  sepolia,
-} from "viem/chains";
 import { config } from "../config";
 import { buy } from "../lib/dex/buy";
+import { getChain } from "../lib/get-chain";
+import { getGroup } from "../lib/get-group";
 import { getPublicClient } from "../lib/get-public-client";
 import { depositDone } from "./actions/deposit-done";
+import { refresh } from "./actions/refresh";
+import { switchId } from "./actions/switch-id";
+import { currentChain } from "./commands/currentChain";
+import { deposit } from "./commands/deposit";
 import { holdings } from "./commands/holdings";
+import { switchChain } from "./commands/switchChain";
 import { myChatMember } from "./events/my-chat-member";
-import { getGroupWallet, getUserWallet } from "./helpers";
+import { getGroupWallet } from "./helpers";
 import buyWizard, { pendingTransactions } from "./scenes/buyWizard2";
-
-let currentChain: Chain = sepolia;
 
 const chains = [
   { id: "ethereum", name: "Ethereum" },
   { id: "scroll", name: "Scroll" },
   { id: "mantle", name: "Mantle" },
 ];
-
-const switchChain = (chainName: string) => {
-  switch (chainName) {
-    case "ethereum":
-      currentChain = sepolia;
-      break;
-    case "scroll":
-      currentChain = scrollSepolia;
-      break;
-    case "mantle":
-      currentChain = mantleSepoliaTestnet;
-      break;
-    default:
-      currentChain = sepolia;
-  }
-};
 
 // Initialize Telegram bot
 export const bot = new Telegraf<Scenes.WizardContext>(config.telegramToken);
@@ -52,73 +34,16 @@ myChatMember(bot);
  * commands
  */
 holdings(bot);
+switchChain(bot);
+currentChain(bot);
+deposit(bot);
 
 /**
  * actions
  */
+refresh(bot);
 depositDone(bot);
-
-bot.command("switchChain", async (ctx) => {
-  await ctx.reply(
-    "Select a network:",
-    Markup.inlineKeyboard([
-      [
-        Markup.button.callback("Ethereum", "switch_ethereum"),
-        Markup.button.callback("Scroll", "switch_scroll"),
-        Markup.button.callback("Mantle", "switch_mantle"),
-      ],
-    ])
-  );
-});
-
-bot.action(/^switch_(.+)$/, async (ctx) => {
-  const chain = ctx.match[1];
-  switchChain(chain);
-  await ctx.editMessageText(`Switched to ${currentChain.name} network`);
-});
-
-bot.command("currentChain", async (ctx) => {
-  await ctx.reply(`Current chain: ${currentChain.name}`);
-});
-
-bot.command("deposit", async (ctx) => {
-  try {
-    const { wallet } = await getUserWallet(ctx);
-    const client = getPublicClient(currentChain);
-    const balance = await client.getBalance({
-      address: wallet.address as `0x${string}`,
-    });
-    const formattedBalance = formatEther(balance);
-    const chainSymbol = mainnet.nativeCurrency.symbol;
-
-    await ctx.reply(
-      `🏦 Your deposit address on Sepolia:\n\n` +
-        `\`${wallet.address}\`\n\n` +
-        `💰 Balance: ${formattedBalance} ${chainSymbol}\n\n` +
-        `✅ Send tokens to this address to deposit them into your account.\n` +
-        `⚠️ Only send tokens on supported networks!`,
-      {
-        parse_mode: "Markdown",
-        ...Markup.inlineKeyboard([
-          [
-            Markup.button.url(
-              "View on Blockscout",
-              `https://eth-sepolia.blockscout.com/address/${wallet.address}`
-            ),
-            Markup.button.callback("Refresh", `refresh`),
-            Markup.button.callback("✅ Done", "deposit_done"),
-          ],
-        ]),
-      }
-    );
-  } catch (error) {
-    console.error("Error in deposit command:", error);
-
-    await ctx.reply(
-      "❌ Sorry, there was an error processing your request. Please try again later."
-    );
-  }
-});
+switchId(bot);
 
 // bot.on("poll", (ctx) => console.log("Poll update", ctx.poll));
 
@@ -202,7 +127,12 @@ bot.command("help", async (ctx) => {
 // Block command
 bot.command("block", async (ctx) => {
   try {
-    const client = getPublicClient(currentChain);
+    const group = await getGroup(ctx.chat.id.toString());
+
+    const chain = getChain(group.chainId);
+
+    const client = getPublicClient(chain);
+
     const blockNumber = await client.getBlockNumber();
     await ctx.reply(`Current block number: ${blockNumber}`);
   } catch (error) {
@@ -226,63 +156,6 @@ bot.command("buy", (ctx: Scenes.WizardContext) =>
   ctx.scene.enter("buy-wizard")
 );
 
-// Add action handler for refresh button
-bot.action("refresh", async (ctx) => {
-  try {
-    const telegramId = ctx.from.id.toString();
-    const { wallet } = await getUserWallet(ctx);
-
-    const client = getPublicClient(currentChain);
-
-    const balance = await client.getBalance({
-      address: wallet.address as `0x${string}`,
-    });
-
-    const formattedBalance = formatEther(balance);
-    const chainSymbol = mainnet.nativeCurrency.symbol;
-
-    // Update the message with fresh data
-    await ctx.editMessageText(
-      `🏦 Your deposit address on Sepolia:\n\n` +
-        `\`${wallet.address}\`\n\n` +
-        `💰 Balance: ${formattedBalance} ${chainSymbol}\n\n` +
-        `✅ Send tokens to this address to deposit them into your account.\n` +
-        `⚠️ Only send tokens on supported networks!`,
-      {
-        parse_mode: "Markdown",
-        reply_markup: Markup.inlineKeyboard([
-          [
-            Markup.button.url(
-              "View on Etherscan",
-              `https://sepolia.etherscan.io/address/${wallet.address}`
-            ),
-            Markup.button.callback("Refresh", "refresh"),
-            Markup.button.callback("✅ Done", "deposit_done"),
-          ],
-        ]).reply_markup,
-      }
-    );
-
-    // Answer the callback query to remove loading state
-    await ctx.answerCbQuery("Balance updated!");
-  } catch (error) {
-    console.error("Error in refresh action:", error);
-    await ctx.answerCbQuery("❌ Failed to refresh balance");
-  }
-});
-
-bot.command("balance", async (ctx) => {
-  const { wallet } = await getGroupWallet(ctx.chat.id);
-  const client = getPublicClient(currentChain);
-  const balance = await client.getBalance({
-    address: wallet.address as `0x${string}`,
-  });
-
-  const formattedBalance = formatEther(balance);
-  const chainSymbol = mainnet.nativeCurrency.symbol;
-
-  await ctx.reply(`Balance: ${formattedBalance} ${chainSymbol}`);
-});
 bot.on("poll", async (ctx) => {
   const poll = ctx.poll;
   const txDetails = pendingTransactions.get(poll.id);
