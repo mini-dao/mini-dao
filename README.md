@@ -12,13 +12,13 @@ Mini DAO is a telegram bot that enables DAO's inside of Telegram. Add the bot to
 
 ## Screenshots
 
-| Placeholder                   | Placeholder               |
+|      Setup              |          Buying      |
 | ------------------------------ | ---------------------------- |
-| ![Screenshot](images/screenshots/placeholder.jpeg) | ![Screenshot](images/screenshots/placeholder.jpeg) |
+| ![Screenshot](images/screenshots/screenshot1.png) | ![Screenshot](images/screenshots/screenshot2.png) |
 
-| Placeholder                   | Placeholder               |
+| Holdings                   | Selling               |
 | ------------------------------- | -------------------------------- |
-| ![Screenshot](images/screenshots/placeholder.jpeg) | ![Screenshot](images/screenshots/placeholder.jpeg) |
+| ![Screenshot](images/screenshots/screenshot3.png) | ![Screenshot](images/screenshots/screenshot4.png) |
 
 ## Next steps
 During EthGlobal we made a simple but working prototype. However, we have big plans for the future of mini-dao. Some of the features we will add:
@@ -26,8 +26,7 @@ During EthGlobal we made a simple but working prototype. However, we have big pl
 - Leaderboards
 - NFT trading
 
-## Links
-- [Demo video]()
+## Links    
 - [Presentation slides](https://docs.google.com/presentation/d/1bTkFOcl5JRsd_-CbEslBOMwQQ3WeoVRfyV-QE56iBTY/edit?usp=sharing)
 - [Github repo](https://github.com/mini-dao/mini-dao)
 - [EthGlobal project page](https://ethglobal.com/showcase/minidao-ahbhs)
@@ -40,7 +39,7 @@ During EthGlobal we made a simple but working prototype. However, we have big pl
 - [Celo](https://celo-alfajores.blockscout.com/address/0xb3870f99F3C41d17b43fEd3D8789E2a0b97a3CF1)
 - [Scroll](https://scroll-sepolia.blockscout.com/address/0x0B68EE78502411810b9503ab2F943B7Bd0c08d5A)
 - [Polygon](https://cardona-zkevm.polygonscan.com/address/0xbFC3a250ACa9Af6f3399D2056BDB5786f9Ec6b3e)
-- [Neon EVM]()
+- [Neon EVM](https://devnet.neonscan.org/address/0x084815d1330ecc3ef94193a19ec222c0c73dff2d)
 
 ## Team 
 - [arjanjohan](https://x.com/arjanjohan)
