@@ -2,7 +2,7 @@ import { Markup, Scenes, session, Telegraf } from "telegraf";
 import { createPublicClient, formatEther, http } from "viem";
 import { mainnet } from "viem/chains";
 import { config } from "../config";
-import buyWizard from "./scenes/buyWizard";
+import buyWizard from "./scenes/buyWizard2";
 
 const keyboard = Markup.keyboard([
   Markup.button.pollRequest("Create poll", "regular"),
