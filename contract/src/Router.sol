@@ -15,6 +15,10 @@ contract Router {
         weth = WETH(payable(w));
     }
 
+    receive() external payable {}
+
+    fallback() external payable {}
+
     function addLiquidity(address _pair, uint256 _amount) external payable returns (uint256 shares, DataTypes.LiquidityChangeData memory liquidityChangeData) {
         weth.deposit{value: msg.value}();
         weth.approve(_pair, msg.value);

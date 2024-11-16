@@ -45,6 +45,9 @@ contract DeployAMM is Script {
         router.addLiquidity{value: pubKey.balance / 8}(address(shibPair), IERC20(address(shib)).balanceOf(pubKey));
         router.addLiquidity{value: pubKey.balance / 8}(address(trumpPair), IERC20(address(trump)).balanceOf(pubKey));
 
+        router.buy{value: pubKey.balance / 8}(address(pepePair));
+        router.sell(address(pepePair), IERC20(address(pepe)).balanceOf(pubKey));
+
         console2.log("Router: ", address(router));
         console2.log("Pepe Pair: ", address(pepePair));
         console2.log("Doge Pair: ", address(dogePair));
