@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.28;
 
+import {IERC20} from "../IERC20.sol";
+
 interface IPair {
+    function token0() external view returns (IERC20);
+    function token1() external view returns (IERC20);
     function reserve0() external view returns(uint256);
     function reserve1() external view returns(uint256);
     function totalSupply() external view returns(uint256);

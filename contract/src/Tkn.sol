@@ -14,7 +14,7 @@ contract Tkn is ERC20 {
         _name = n;
         _symbol = s;
         _decimals = d;
-        _mint(msg.sender, t);
+        _mint(msg.sender, t * 10 ** d);
     }
 
     function name() public view override returns (string memory) { return _name; }
