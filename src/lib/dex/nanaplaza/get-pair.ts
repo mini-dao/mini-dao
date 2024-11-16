@@ -6,8 +6,8 @@ export const getPair = (chain: Chain, token: Address) => {
     case mantleSepoliaTestnet.id: {
       switch (token) {
         // pepe
-        case "0xAEAFBA08a4B79f08FAeccAE67804cF93FCD08AC1":
-          return "0xE36e1E9796C7408C7a9a3BD35e6f32f42a3ca56d";
+        case "0x7D0057299cc88ec1533eF43598769068e522DE29":
+          return "0x14592Ea7110F66e3307746e91f6283DD6A08d3D7";
       }
 
       break;
@@ -15,8 +15,8 @@ export const getPair = (chain: Chain, token: Address) => {
     case sepolia.id: {
       switch (token) {
         // pepe
-        case "0x05Ad344b2fdE2596EDBA577E21DAfbB55D617c81":
-          return "0xe0958213e1AAE9DDCa831edeF52698e19e5F161a";
+        case "0x335F41Fd42Fc007c5259466b7632bF98725cD54e":
+          return "0x656af7B2e976019e8f3aD7ec743132710252E24c";
       }
 
       break;
