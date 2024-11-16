@@ -20,6 +20,12 @@ export const pendingTransactions = new Map<string, PendingTransaction>();
 
 type MyContext = Scenes.WizardContext<MyWizardSession>;
 
+const chains = [
+  { id: "ethereum", name: "Ethereum" },
+  { id: "bsc", name: "BSC" },
+  { id: "polygon", name: "Polygon" },
+];
+
 const amounts = ["0.1", "0.5", "1.0", "2.0", "Custom"];
 
 // Add default chain constant
@@ -97,7 +103,7 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
           return;
         default:
           // Handle specific amounts (1.0, 2.0)
-          await handleBuyOrder(ctx, action);
+          await handleSellOrder(ctx, action);
           return await ctx.scene.leave();
       }
     }
@@ -110,7 +116,7 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
         await ctx.reply("Please enter a valid number");
         return;
       }
-      await handleBuyOrder(ctx, message.text);
+      await handleSellOrder(ctx, message.text);
       return await ctx.scene.leave();
     }
 
@@ -118,7 +124,7 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
   }
 );
 
-async function handleBuyOrder(ctx: MyContext, amount: string) {
+async function handleSellOrder(ctx: MyContext, amount: string) {
   const { selectedChain, tokenAddress } = ctx.scene.session;
   //   await ctx.reply(
   //     "Remaining Balance:\n" +
@@ -130,7 +136,7 @@ async function handleBuyOrder(ctx: MyContext, amount: string) {
   //   );
 
   const orderSummary =
-    `*📊 Order Summary / BUY*\n` +
+    `*📊 Order Summary / SELL*\n` +
     `━━━━━━━━━━━━━━━\n` +
     `🔗 *Chain:* ${selectedChain}\n` +
     `🪙 *Token:* \`${tokenAddress}\`\n` +

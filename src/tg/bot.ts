@@ -15,18 +15,20 @@ import { mainnet, sepolia } from "viem/chains";
 import { config } from "../config";
 import { db, schema } from "../db";
 import { getPublicClient } from "../lib/get-public-client";
+import { buy } from "./buy";
 import { getGroupWallet, getUserWallet } from "./helpers";
 import buyWizard, { pendingTransactions } from "./scenes/buyWizard2";
-
-const keyboard = Markup.keyboard([
-  Markup.button.pollRequest("Create poll", "regular"),
-  Markup.button.pollRequest("Create quiz", "quiz"),
-]);
 
 const client = createPublicClient({
   chain: sepolia,
   transport: http(),
 });
+
+const chains = [
+  { id: "ethereum", name: "Ethereum" },
+  { id: "scroll", name: "Scroll" },
+  { id: "mantle", name: "Mantle" },
+];
 
 // Initialize Telegram bot
 export const bot = new Telegraf<Scenes.WizardContext>(config.telegramToken);
@@ -105,8 +107,8 @@ bot.command("deposit", async (ctx) => {
         ...Markup.inlineKeyboard([
           [
             Markup.button.url(
-              "View on Etherscan",
-              `https://sepolia.etherscan.io/address/${wallet.address}`
+              "View on Blockscout",
+              `https://eth-sepolia.blockscout.com/address/${wallet.address}`
             ),
             Markup.button.callback("Refresh", `refresh`),
             Markup.button.callback("✅ Done", "deposit_done"),
@@ -306,7 +308,14 @@ bot.on("poll", async (ctx) => {
           tokenAddress: txDetails.tokenAddress,
           amount: txDetails.amount,
         });
-
+        const { wallet } = await getGroupWallet(ctx);
+        await ctx.telegram.sendMessage(txDetails.chatId, "Buying...");
+        await buy({
+          account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
+          chain: sepolia,
+          token: txDetails.tokenAddress as `0x${string}`,
+          amount: txDetails.amount,
+        });
         await ctx.telegram.sendMessage(
           txDetails.chatId,
           "✅ Transaction approved and executed!"
