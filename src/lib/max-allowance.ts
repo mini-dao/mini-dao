@@ -28,6 +28,7 @@ export const maxAllowance = async ({
     functionName: "allowance",
     args: [account.address, router.address],
   });
+  console.log("🚀 ~ allowance:", allowance);
 
   if (!allowance) {
     const walletClient = getWalletClient(chain, account);

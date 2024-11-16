@@ -1,5 +1,5 @@
 import { Markup, Scenes, session, Telegraf } from "telegraf";
-import { formatEther, type Chain } from "viem";
+import { formatEther, parseUnits, type Chain } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import {
   mainnet,
@@ -8,13 +8,16 @@ import {
   sepolia,
 } from "viem/chains";
 import { config } from "../config";
+import { sell } from "../lib/dex";
 import { buy } from "../lib/dex/buy";
 import { getPublicClient } from "../lib/get-public-client";
 import { depositDone } from "./actions/deposit-done";
 import { holdings } from "./commands/holdings";
 import { myChatMember } from "./events/my-chat-member";
 import { getGroupWallet, getUserWallet } from "./helpers";
-import buyWizard, { pendingTransactions } from "./scenes/buyWizard2";
+import buyWizard from "./scenes/buyWizard2";
+import sellWizard from "./scenes/sellWizard";
+import { pendingTransactions } from "./types/pending-transactions";
 
 let currentChain: Chain = sepolia;
 
@@ -124,7 +127,7 @@ bot.command("deposit", async (ctx) => {
 
 // Initialize session and stage
 
-const stage = new Scenes.Stage<Scenes.WizardContext>([buyWizard]);
+const stage = new Scenes.Stage<Scenes.WizardContext>([buyWizard, sellWizard]);
 bot.use(session());
 bot.use(stage.middleware());
 
@@ -225,6 +228,9 @@ bot.command("block", async (ctx) => {
 bot.command("buy", (ctx: Scenes.WizardContext) =>
   ctx.scene.enter("buy-wizard")
 );
+bot.command("sell", (ctx: Scenes.WizardContext) =>
+  ctx.scene.enter("sell-wizard")
+);
 
 // Add action handler for refresh button
 bot.action("refresh", async (ctx) => {
@@ -281,7 +287,22 @@ bot.command("balance", async (ctx) => {
   const formattedBalance = formatEther(balance);
   const chainSymbol = mainnet.nativeCurrency.symbol;
 
-  await ctx.reply(`Balance: ${formattedBalance} ${chainSymbol}`);
+  await ctx.reply(
+    `🏦 Your address on Sepolia:\n\n` +
+      `\`${wallet.address}\`\n\n` +
+      `💰 Balance: ${formattedBalance} ${chainSymbol}\n\n` +
+      {
+        parse_mode: "Markdown",
+        ...Markup.inlineKeyboard([
+          [
+            Markup.button.url(
+              "View on Blockscout",
+              `https://eth-sepolia.blockscout.com/address/${wallet.address}`
+            ),
+          ],
+        ]),
+      }
+  );
 });
 bot.on("poll", async (ctx) => {
   const poll = ctx.poll;
@@ -307,14 +328,29 @@ bot.on("poll", async (ctx) => {
           amount: txDetails.amount,
         });
         const { wallet } = await getGroupWallet(txDetails.chatId);
-        console.log("🚀 ~ bot.on ~ wallet:", wallet);
-        await ctx.telegram.sendMessage(txDetails.chatId, "Buying...");
-        await buy({
-          account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
-          chain: currentChain,
-          token: txDetails.tokenAddress as `0x${string}`,
-          amount: txDetails.amount,
-        });
+        console.log(
+          "🚀 ~ bot.on ~ wallet:",
+          wallet,
+          parseUnits(parseInt(txDetails.amount).toString(), 6).toString()
+        );
+        if (txDetails.type === "buy") {
+          await ctx.telegram.sendMessage(txDetails.chatId, "Buying...");
+          await buy({
+            account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
+            chain: currentChain,
+            token: txDetails.tokenAddress as `0x${string}`,
+            amount: txDetails.amount.toString(),
+          });
+        } else if (txDetails.type === "sell") {
+          await ctx.telegram.sendMessage(txDetails.chatId, "Selling...");
+
+          await sell({
+            account: privateKeyToAccount(wallet.privateKey as `0x${string}`),
+            chain: currentChain,
+            token: txDetails.tokenAddress as `0x${string}`,
+            amount: txDetails.amount.toString(),
+          });
+        }
         await ctx.telegram.sendMessage(
           txDetails.chatId,
           "✅ Transaction approved and executed!"

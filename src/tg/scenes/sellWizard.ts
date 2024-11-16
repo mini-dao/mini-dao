@@ -1,5 +1,6 @@
 import { Scenes } from "telegraf";
 import type { Message } from "telegraf/types";
+import { pendingTransactions } from "../types/pending-transactions";
 
 const tokenAddressRegex = /^0x[a-fA-F0-9]{40}$/;
 
@@ -8,15 +9,6 @@ interface MyWizardSession extends Scenes.WizardSessionData {
   tokenAddress?: string;
   amount?: string;
 }
-export interface PendingTransaction {
-  chain: string;
-  tokenAddress: string;
-  amount: string;
-  chatId: number;
-  messageId: number;
-}
-
-export const pendingTransactions = new Map<string, PendingTransaction>();
 
 type MyContext = Scenes.WizardContext<MyWizardSession>;
 
@@ -32,8 +24,8 @@ const amounts = ["0.1", "0.5", "1.0", "2.0", "Custom"];
 const DEFAULT_CHAIN = "ethereum";
 
 // Modify the wizard to start from token info when address is provided
-const buyWizard = new Scenes.WizardScene<MyContext>(
-  "buy-wizard",
+const sellWizard = new Scenes.WizardScene<MyContext>(
+  "sell-wizard",
   // Step 1: Show token info and amount options
   async (ctx) => {
     // Set default chain
@@ -44,7 +36,7 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
     const tokenAddress = message.text?.split(" ")[1];
 
     if (!tokenAddress || !tokenAddressRegex.test(tokenAddress)) {
-      await ctx.reply("Please provide a valid token address: /buy 0x...");
+      await ctx.reply("Please provide a valid token address: /sell 0x...");
       return await ctx.scene.leave();
     }
 
@@ -60,20 +52,16 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
     const keyboard = {
       inline_keyboard: [
         [{ text: "Cancel", callback_data: "cancel" }],
+        [{ text: "✅ Swap", callback_data: "swap" }],
         [
-          { text: "🔒 DCA", callback_data: "dca" },
-          { text: "✅ Swap", callback_data: "swap" },
-          { text: "Limit", callback_data: "limit" },
-        ],
-        [
-          { text: "Buy 1.0 ETH", callback_data: "1.0" },
-          { text: "Buy 2.0 ETH", callback_data: "2.0" },
-          { text: "Buy X ETH", callback_data: "custom" },
+          { text: "SELL 1.0 ETH", callback_data: "1.0" },
+          { text: "SELL 2.0 ETH", callback_data: "2.0" },
+          { text: "SELL X ETH", callback_data: "custom" },
         ],
       ],
     };
 
-    await ctx.reply("To buy press one of the buttons below.", {
+    await ctx.reply("To sell press one of the buttons below.", {
       reply_markup: keyboard,
     });
     return ctx.wizard.next();
@@ -137,15 +125,19 @@ async function handleSellOrder(ctx: MyContext, amount: string) {
 
   const orderSummary =
     `*📊 Order Summary / SELL*\n` +
-    `━━━━━━━━━━━━━━━\n` +
-    `🔗 *Chain:* ${selectedChain}\n` +
+    `━━━━━━━━━━━━━━━\n\n` +
+    `🔗 *Network:* ${selectedChain}\n` +
     `🪙 *Token:* \`${tokenAddress}\`\n` +
     `💰 *Amount:* ${amount} ETH\n` +
-    "Current Balance:* :\n" +
-    `━━━━━━━━━━━━━━━\n`;
+    `💵 *Balance:* 0.0 ETH\n\n` +
+    `━━━━━━━━━━━━━━━`;
+
+  await ctx.reply(orderSummary, {
+    parse_mode: "Markdown",
+  });
 
   const poll = await ctx.replyWithPoll(
-    `${orderSummary}\n*⚠️ Do you approve this transaction?*`,
+    `⚠️ Do you approve this transaction?*`,
     ["✅ Yes", "❌ No"],
     {
       is_anonymous: false,
@@ -154,13 +146,15 @@ async function handleSellOrder(ctx: MyContext, amount: string) {
   );
 
   pendingTransactions.set(poll.poll.id, {
+    type: "sell",
     chain: selectedChain!,
     tokenAddress: tokenAddress!,
     amount,
     chatId: poll.chat.id,
     messageId: poll.message_id,
   });
+  console.log("pendingTransactions", pendingTransactions);
 }
 
 export type { MyContext, MyWizardSession };
-export default buyWizard;
+export default sellWizard;

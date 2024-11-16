@@ -1,5 +1,6 @@
 import { Scenes } from "telegraf";
 import type { Message } from "telegraf/types";
+import { pendingTransactions } from "../types/pending-transactions";
 
 const tokenAddressRegex = /^0x[a-fA-F0-9]{40}$/;
 
@@ -8,15 +9,6 @@ interface MyWizardSession extends Scenes.WizardSessionData {
   tokenAddress?: string;
   amount?: string;
 }
-export interface PendingTransaction {
-  chain: string;
-  tokenAddress: string;
-  amount: string;
-  chatId: number;
-  messageId: number;
-}
-
-export const pendingTransactions = new Map<string, PendingTransaction>();
 
 type MyContext = Scenes.WizardContext<MyWizardSession>;
 
@@ -131,15 +123,19 @@ async function handleBuyOrder(ctx: MyContext, amount: string) {
 
   const orderSummary =
     `*📊 Order Summary / BUY*\n` +
-    `━━━━━━━━━━━━━━━\n` +
-    `🔗 *Chain:* ${selectedChain}\n` +
+    `━━━━━━━━━━━━━━━\n\n` +
+    `🔗 *Network:* ${selectedChain}\n` +
     `🪙 *Token:* \`${tokenAddress}\`\n` +
     `💰 *Amount:* ${amount} ETH\n` +
-    "Current Balance:* :\n" +
-    `━━━━━━━━━━━━━━━\n`;
+    `💵 *Balance:* 0.0 ETH\n\n` +
+    `━━━━━━━━━━━━━━━`;
+
+  await ctx.reply(orderSummary, {
+    parse_mode: "Markdown",
+  });
 
   const poll = await ctx.replyWithPoll(
-    `${orderSummary}\n*⚠️ Do you approve this transaction?*`,
+    `⚠️ Do you approve this transaction?*`,
     ["✅ Yes", "❌ No"],
     {
       is_anonymous: false,
@@ -148,6 +144,7 @@ async function handleBuyOrder(ctx: MyContext, amount: string) {
   );
 
   pendingTransactions.set(poll.poll.id, {
+    type: "buy",
     chain: selectedChain!,
     tokenAddress: tokenAddress!,
     amount,
