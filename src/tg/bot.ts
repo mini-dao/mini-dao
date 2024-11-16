@@ -1,11 +1,19 @@
-import { Scenes, session, Telegraf } from "telegraf";
+import { Markup, Scenes, session, Telegraf } from "telegraf";
 import { createPublicClient, formatEther, http } from "viem";
 import { mainnet } from "viem/chains";
 import { config } from "../config";
 import buyWizard from "./scenes/buyWizard";
 
+const keyboard = Markup.keyboard([
+  Markup.button.pollRequest("Create poll", "regular"),
+  Markup.button.pollRequest("Create quiz", "quiz"),
+]);
+
 // Initialize Telegram bot
 export const bot = new Telegraf<Scenes.WizardContext>(config.telegramToken);
+
+bot.on("poll", (ctx) => console.log("Poll update", ctx.poll));
+bot.on("poll_answer", (ctx) => console.log("Poll answer", ctx.pollAnswer));
 
 // Initialize Viem client
 const client = createPublicClient({
@@ -14,9 +22,12 @@ const client = createPublicClient({
 });
 
 // Initialize session and stage
+
 const stage = new Scenes.Stage<Scenes.WizardContext>([buyWizard]);
-bot.use(session({ defaultSession: () => ({}) }));
+bot.use(session());
 bot.use(stage.middleware());
+
+bot.start(async (ctx) => await ctx.reply("Welcome"));
 
 // Start command
 bot.command("start", async (ctx) => {
@@ -36,6 +47,9 @@ bot.command("help", async (ctx) => {
     "Available commands:\n" +
       "/balance <address> - Check ETH balance\n" +
       "/block - Get latest block number\n" +
+      "/buy - Buy a token\n" +
+      "/sell - Sell a token\n" +
+      "/leaderboard - Display leaderboard\n" +
       "/gas - Get current gas price"
   );
 });
@@ -93,3 +107,19 @@ bot.command("buy", (ctx: Scenes.WizardContext) =>
 bot.catch((err: any) => {
   console.error("Bot error:", err);
 });
+
+// Start the bot
+// bot
+//   .launch()
+//   .then(() => {
+//     console.log("Bot is running!");
+//   })
+//   .catch((err) => {
+//     console.error("Failed to start bot:", err);
+//   });
+
+// Enable graceful stop
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));
+
+export default bot;

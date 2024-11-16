@@ -6,6 +6,7 @@ const tokenAddressRegex = /^0x[a-fA-F0-9]{40}$/;
 interface MyWizardSession extends Scenes.WizardSessionData {
   selectedChain?: string;
   tokenAddress?: string;
+  amount?: string;
 }
 
 type MyContext = Scenes.WizardContext<MyWizardSession>;
@@ -32,7 +33,7 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
   },
   // Step 2: Handle chain selection and ask for token address
   async (ctx) => {
-    if (!("data" in ctx.callbackQuery!)) {
+    if (!ctx.callbackQuery || !("data" in ctx.callbackQuery)) {
       await ctx.reply("Please select a chain using the buttons above.");
       return;
     }
@@ -42,9 +43,11 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
     console.log("Step 2 - Selected chain:", ctx.scene.session.selectedChain);
 
     // Answer the callback query to clear the loading state
-    await ctx.answerCbQuery();
+    // await ctx.answerCbQuery();
 
-    await ctx.reply("Please enter the token address:");
+    await ctx.reply("Please enter the token address:", {
+      reply_markup: { force_reply: true },
+    });
     console.log("Step 2 - Received message:", ctx.message);
     return ctx.wizard.next();
   },
@@ -54,16 +57,18 @@ const buyWizard = new Scenes.WizardScene<MyContext>(
 
     if (!ctx.message || !("text" in ctx.message)) {
       await ctx.reply("Please enter a valid token address.");
-      return ctx.wizard.next();
+      return;
     }
 
     const text = ctx.message.text;
     console.log("Validating address:", text);
 
     //check valid token address regex
-    if (!tokenAddressRegex.test(text)) {
-      await ctx.reply("Please enter a valid token address (0x...)");
-      return ctx.wizard.next();
+    if (!text.includes("/")) {
+      if (!tokenAddressRegex.test(text)) {
+        await ctx.reply("Please enter a valid token address (0x...)");
+        return;
+      }
     }
 
     // Store token address

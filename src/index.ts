@@ -6,7 +6,7 @@ import { readContract } from "./lib/read-contract";
 import { writeContract } from "./lib/write-contract";
 import { bot } from "./tg/bot";
 
-server.listen(config.port || 3000, () => {
+server.listen(config.port || 3001, () => {
   console.log(`listening on :${config.port}`);
 });
 
