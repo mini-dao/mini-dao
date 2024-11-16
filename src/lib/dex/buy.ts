@@ -1,6 +1,6 @@
 import type { Account, Address, Chain } from "viem";
 import { mantleSepoliaTestnet, sepolia } from "viem/chains";
-import * as cowswap from "./cowswap";
+// import * as cowswap from "./cowswap";
 import * as nanaplaza from "./nanaplaza";
 
 export const buy = (params: {
@@ -13,6 +13,6 @@ export const buy = (params: {
     case mantleSepoliaTestnet.id:
       return nanaplaza.buy(params);
     case sepolia.id:
-      return cowswap.buy(params);
+      return nanaplaza.buy(params);
   }
 };
