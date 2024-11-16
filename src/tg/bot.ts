@@ -1,17 +1,17 @@
 import { eq } from "drizzle-orm";
 import { Markup, Scenes, session, Telegraf } from "telegraf";
-import {
-  createPublicClient,
-  createWalletClient,
-  formatEther,
-  http,
-} from "viem";
+import { createWalletClient, formatEther, http, type Chain } from "viem";
 import {
   generatePrivateKey,
   privateKeyToAccount,
   privateKeyToAddress,
 } from "viem/accounts";
-import { mainnet, sepolia } from "viem/chains";
+import {
+  mainnet,
+  mantleSepoliaTestnet,
+  scrollSepolia,
+  sepolia,
+} from "viem/chains";
 import { config } from "../config";
 import { db, schema } from "../db";
 import { getPublicClient } from "../lib/get-public-client";
@@ -19,16 +19,29 @@ import { buy } from "./buy";
 import { getGroupWallet, getUserWallet } from "./helpers";
 import buyWizard, { pendingTransactions } from "./scenes/buyWizard2";
 
-const client = createPublicClient({
-  chain: sepolia,
-  transport: http(),
-});
+let currentChain: Chain = sepolia;
 
 const chains = [
   { id: "ethereum", name: "Ethereum" },
   { id: "scroll", name: "Scroll" },
   { id: "mantle", name: "Mantle" },
 ];
+
+const switchChain = (chainName: string) => {
+  switch (chainName) {
+    case "ethereum":
+      currentChain = sepolia;
+      break;
+    case "scroll":
+      currentChain = scrollSepolia;
+      break;
+    case "mantle":
+      currentChain = mantleSepoliaTestnet;
+      break;
+    default:
+      currentChain = sepolia;
+  }
+};
 
 // Initialize Telegram bot
 export const bot = new Telegraf<Scenes.WizardContext>(config.telegramToken);
@@ -86,10 +99,33 @@ bot.on("my_chat_member", async (ctx) => {
   }
 });
 
+bot.command("switchChain", async (ctx) => {
+  await ctx.reply(
+    "Select a network:",
+    Markup.inlineKeyboard([
+      [
+        Markup.button.callback("Ethereum", "switch_ethereum"),
+        Markup.button.callback("Scroll", "switch_scroll"),
+        Markup.button.callback("Mantle", "switch_mantle"),
+      ],
+    ])
+  );
+});
+
+bot.action(/^switch_(.+)$/, async (ctx) => {
+  const chain = ctx.match[1];
+  switchChain(chain);
+  await ctx.editMessageText(`Switched to ${currentChain.name} network`);
+});
+
+bot.command("currentChain", async (ctx) => {
+  await ctx.reply(`Current chain: ${currentChain.name}`);
+});
+
 bot.command("deposit", async (ctx) => {
   try {
     const { wallet } = await getUserWallet(ctx);
-
+    const client = getPublicClient(currentChain);
     const balance = await client.getBalance({
       address: wallet.address as `0x${string}`,
     });
@@ -128,7 +164,7 @@ bot.command("deposit", async (ctx) => {
 bot.action("deposit_done", async (ctx) => {
   const { wallet } = await getUserWallet(ctx);
   const { wallet: groupWallet } = await getGroupWallet(ctx);
-
+  const client = getPublicClient(currentChain);
   const balance = await client.getBalance({
     address: wallet.address as `0x${string}`,
   });
@@ -169,11 +205,28 @@ bot.use(stage.middleware());
 
 bot.start(async (ctx) => await ctx.reply("Welcome"));
 
+bot.command("switch", async (ctx) => {
+  const chainId = ctx.message.text.split(" ")[1]?.toLowerCase();
+
+  if (!chainId) {
+    await ctx.reply(
+      "Please specify a chain:\n" +
+        "/switch ethereum\n" +
+        "/switch scroll\n" +
+        "/switch mantle"
+    );
+    return;
+  }
+
+  switchChain(chainId);
+  await ctx.reply(`Switched to ${currentChain} network`);
+});
+
 // Start command
 bot.command("start", async (ctx) => {
   await ctx.reply(
     "Welcome to MiniDAO Bot! 🤖\n\n" +
-      "/balance <address> - Check ETH balance\n" +
+      "/balance - Check ETH balance\n" +
       "/deposit - Get deposit address\n" +
       "/block - Get latest block number\n" +
       "/buy - Buy a token\n" +
@@ -188,7 +241,7 @@ bot.command("start", async (ctx) => {
 bot.command("help", async (ctx) => {
   await ctx.reply(
     "Available commands:\n" +
-      "/balance <address> - Check ETH balance\n" +
+      "/balance - Check ETH balance\n" +
       "/deposit - Get deposit address\n" +
       "/block - Get latest block number\n" +
       "/buy - Buy a token\n" +
@@ -199,31 +252,32 @@ bot.command("help", async (ctx) => {
 });
 
 // Balance command
-bot.command("balance", async (ctx) => {
-  try {
-    const address = ctx.message.text.split(" ")[1];
+// bot.command("balance", async (ctx) => {
+//   try {
+//     const address = ctx.message.text.split(" ")[1];
 
-    if (!address) {
-      await ctx.reply(
-        "Please provide an Ethereum address.\nUsage: /balance <address>"
-      );
-      return;
-    }
+//     if (!address) {
+//       await ctx.reply(
+//         "Please provide an Ethereum address.\nUsage: /balance <address>"
+//       );
+//       return;
+//     }
 
-    const balance = await client.getBalance({
-      address: address as `0x${string}`,
-    });
-    const formattedBalance = formatEther(balance);
+//     const balance = await client.getBalance({
+//       address: address as `0x${string}`,
+//     });
+//     const formattedBalance = formatEther(balance);
 
-    await ctx.reply(`Balance: ${formattedBalance} ETH`);
-  } catch (error) {
-    await ctx.reply("Error: Invalid address or network issue.");
-  }
-});
+//     await ctx.reply(`Balance: ${formattedBalance} ETH`);
+//   } catch (error) {
+//     await ctx.reply("Error: Invalid address or network issue.");
+//   }
+// });
 
 // Block command
 bot.command("block", async (ctx) => {
   try {
+    const client = getPublicClient(currentChain);
     const blockNumber = await client.getBlockNumber();
     await ctx.reply(`Current block number: ${blockNumber}`);
   } catch (error) {
@@ -253,7 +307,8 @@ bot.action("refresh", async (ctx) => {
     const telegramId = ctx.from.id.toString();
     const { wallet } = await getUserWallet(ctx);
 
-    // Get balance from current chain
+    const client = getPublicClient(currentChain);
+
     const balance = await client.getBalance({
       address: wallet.address as `0x${string}`,
     });
@@ -291,6 +346,18 @@ bot.action("refresh", async (ctx) => {
   }
 });
 
+bot.command("balance", async (ctx) => {
+  const { wallet } = await getGroupWallet(ctx);
+  const client = getPublicClient(currentChain);
+  const balance = await client.getBalance({
+    address: wallet.address as `0x${string}`,
+  });
+
+  const formattedBalance = formatEther(balance);
+  const chainSymbol = mainnet.nativeCurrency.symbol;
+
+  await ctx.reply(`Balance: ${formattedBalance} ${chainSymbol}`);
+});
 bot.on("poll", async (ctx) => {
   const poll = ctx.poll;
   const txDetails = pendingTransactions.get(poll.id);
